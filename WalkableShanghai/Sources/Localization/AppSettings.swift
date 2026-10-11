@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// App-wide user settings. Small on purpose — right now it holds the language
-/// and whether onboarding has been seen.
+/// App-wide user settings. Small on purpose — right now it holds the language,
+/// whether onboarding has been seen, and the map style.
 ///
 /// Uses `@Observable` rather than `ObservableObject`: views that read
 /// `language` re-render when it changes, and views that do not, do not.
@@ -12,6 +12,7 @@ final class AppSettings {
     private enum Key {
         static let language = "settings.language"
         static let hasSeenOnboarding = "settings.hasSeenOnboarding"
+        static let mapStyle = "settings.mapStyle"
     }
 
     private let defaults: UserDefaults
@@ -32,6 +33,13 @@ final class AppSettings {
         }
     }
 
+    var mapStyle: MapStyleOption {
+        didSet {
+            guard mapStyle != oldValue else { return }
+            defaults.set(mapStyle.rawValue, forKey: Key.mapStyle)
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         // First launch takes the phone's language as a starting point; after
@@ -43,6 +51,7 @@ final class AppSettings {
             self.language = AppLanguage.systemDefault
         }
         self.hasSeenOnboarding = defaults.bool(forKey: Key.hasSeenOnboarding)
+        self.mapStyle = defaults.string(forKey: Key.mapStyle).flatMap(MapStyleOption.init(rawValue:)) ?? .standard
     }
 
     /// Convenience for the language switch control.

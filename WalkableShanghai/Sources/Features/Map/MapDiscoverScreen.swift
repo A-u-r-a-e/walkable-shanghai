@@ -48,6 +48,7 @@ struct MapDiscoverScreen: View {
                 RouteMapView(
                     mode: .discover,
                     routes: listedRoutes,
+                    style: settings.mapStyle,
                     bottomInset: Detent.peek.height(in: available),
                     topInset: 132,
                     onSelectRoute: { selectedRouteId = $0 }

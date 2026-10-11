@@ -29,11 +29,15 @@ struct RouteMapView: UIViewRepresentable {
     /// caches overlay renderers, so without something to invalidate on, a
     /// casing chosen for one appearance would survive into the other.
     @Environment(\.colorScheme) private var colorScheme
+    /// Read so pins carry the route's name in the app's language, and so a
+    /// language switch relabels them.
+    @Environment(AppSettings.self) private var settings
 
     let mode: Mode
     /// The routes to draw. In `discover` this is the filtered list, so the map
     /// and the sheet below it always agree.
     let routes: [Route]
+    var style: MapStyleOption = .standard
     /// How much of the bottom of the map the sheet covers *at rest*, so the
     /// camera frames the routes in the part you can actually see.
     ///
@@ -64,13 +68,9 @@ struct RouteMapView: UIViewRepresentable {
         let map = MKMapView()
         map.delegate = context.coordinator
 
-        // Muted emphasis is MapKit's own "step back so overlays read" style, and
-        // it does most of the work of matching the app's ground. Points of
-        // interest are switched off entirely: this app is about the line you
-        // walk, and Apple's default pins compete with our own.
-        let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
-        configuration.pointOfInterestFilter = .excludingAll
-        map.preferredConfiguration = configuration
+        map.preferredConfiguration = Self.configuration(for: style)
+        map.accessibilityIdentifier = "route-map"
+        map.accessibilityValue = style.rawValue
 
         // The basemap follows the app's appearance explicitly rather than by
         // inheritance, so the casing and the tiles under it can never disagree
@@ -118,13 +118,22 @@ struct RouteMapView: UIViewRepresentable {
     func updateUIView(_ map: MKMapView, context: Context) {
         context.coordinator.parent = self
 
+        if context.coordinator.lastStyle != style {
+            context.coordinator.lastStyle = style
+            map.preferredConfiguration = Self.configuration(for: style)
+            map.accessibilityValue = style.rawValue
+        }
+
         // Redraw and re-frame only when the set of routes actually changes —
         // a filter change or the first load. Panning and sheet movement leave
         // the camera alone.
-        // The appearance is part of the signature: a light-to-dark flip has to
-        // redraw for the same reason a filter change does — the overlays are
-        // styled for one mode and cached.
-        let signature = routes.map(\.id).joined(separator: ",") + "|\(colorScheme)"
+        // The mode is part of the signature so that selecting a route redraws
+        // (pins off, one line) even when the list already held only that route.
+        // The appearance is part of it too: a light-to-dark flip has to redraw
+        // for the same reason a filter change does — the overlays are styled
+        // for one mode and cached. And the language, so the pins' names follow
+        // a language switch.
+        let signature = routes.map(\.id).joined(separator: ",") + "|\(mode)|\(colorScheme)|\(settings.language.rawValue)"
         let routesChanged = context.coordinator.lastSignature != signature
 
         if routesChanged {
@@ -156,6 +165,27 @@ struct RouteMapView: UIViewRepresentable {
         }
         if followsWalker, let walkerCoordinate {
             context.coordinator.follow(map, to: walkerCoordinate)
+        }
+    }
+
+    /// MapKit's configuration for each style.
+    ///
+    /// Standard keeps the muted emphasis so the route reads over the map, and
+    /// hides Apple's points of interest, which compete with our pins. Traffic
+    /// is the same map with traffic drawn. Satellite is imagery with street
+    /// labels (MapKit's hybrid), because bare imagery gives a walker nothing
+    /// to read.
+    static func configuration(for style: MapStyleOption) -> MKMapConfiguration {
+        switch style {
+        case .standard, .traffic:
+            let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
+            configuration.pointOfInterestFilter = .excludingAll
+            configuration.showsTraffic = style == .traffic
+            return configuration
+        case .satellite:
+            let configuration = MKHybridMapConfiguration(elevationStyle: .flat)
+            configuration.pointOfInterestFilter = .excludingAll
+            return configuration
         }
     }
 
@@ -192,7 +222,11 @@ struct RouteMapView: UIViewRepresentable {
 
         if mode == .discover {
             map.addAnnotations(routes.map {
-                RoutePinAnnotation(routeId: $0.id, coordinate: $0.pin.clLocationCoordinate)
+                RoutePinAnnotation(
+                    routeId: $0.id,
+                    coordinate: $0.pin.clLocationCoordinate,
+                    title: $0.name(settings.language)
+                )
             })
         }
     }
@@ -261,6 +295,7 @@ struct RouteMapView: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         var parent: RouteMapView
         var lastSignature: String?
+        var lastStyle: MapStyleOption?
         var hasFramedOnce = false
         var lastWalkedStep: Double = -1
         var lastDraftSignature: String?
