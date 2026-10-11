@@ -1,0 +1,149 @@
+import SwiftUI
+
+/// Every shared component on one screen, in the current language.
+///
+/// This is a working surface, not a shipping screen — the plan asks that Phase
+/// 1's components be "built and exercised", and this is where they get
+/// exercised. It is also the fastest way to check a token change, and the
+/// fastest way to see what Chinese does to a layout.
+struct DesignSystemGalleryView: View {
+
+    @Environment(AppSettings.self) private var settings
+    @Environment(RouteStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var filter: Filter = .featured
+
+    enum Filter: Hashable { case featured, nearby, saved }
+
+    var body: some View {
+        let language = settings.language
+
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.s8) {
+
+                section("gallery.tokens".localized(language)) {
+                    // The working greens and the grounds they sit on, in the
+                    // order DESIGN.md §2 lists them.
+                    VStack(spacing: Theme.Space.s2) {
+                        HStack(spacing: Theme.Space.s2) {
+                            swatch(Theme.bg, "bg")
+                            swatch(Theme.surface, "surface")
+                            swatch(Theme.fill, "fill")
+                            swatch(Theme.mist, "mist")
+                        }
+                        HStack(spacing: Theme.Space.s2) {
+                            swatch(Theme.accentMuted, "mist green")
+                            swatch(Theme.accentStrong, "leaf")
+                            swatch(Theme.accent, "deep")
+                            swatch(Theme.sunlight, "sunlight")
+                        }
+                    }
+                }
+
+                section("gallery.figures".localized(language)) {
+                    FigureStrip(figures: [
+                        ("3.4", "unit.km".localized(language), false),
+                        ("52", "unit.min".localized(language), false),
+                        ("0", "unit.deadEnds".localized(language), true),
+                    ])
+                }
+
+                section("gallery.selection".localized(language)) {
+                    SegmentedRing(
+                        options: [
+                            (Filter.featured, "Featured"),
+                            (Filter.nearby, "Nearby"),
+                            (Filter.saved, "Saved"),
+                        ],
+                        selection: $filter
+                    )
+                }
+
+                section("gallery.tags".localized(language)) {
+                    VStack(alignment: .leading, spacing: Theme.Space.s3) {
+                        HStack(spacing: Theme.Space.s2) {
+                            TagChip(text: "Plane trees", style: .outline)
+                            TagChip(text: "Morning", style: .accent)
+                            TagChip(text: "Xuhui", style: .neutral)
+                            TagChip(text: "Green", style: .accent, symbol: "leaf")
+                        }
+                        HStack(spacing: Theme.Space.s3) {
+                            AvatarInitial(initial: "沁", size: 34)
+                            AvatarInitial(initial: "邱", size: 34, emphasised: true)
+                            AvatarInitial(initial: "M", size: 34)
+                        }
+                    }
+                }
+
+                section("gallery.rows".localized(language)) {
+                    VStack(spacing: 0) {
+                        let rows = Array(store.routes.prefix(3))
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, route in
+                            RouteRow(
+                                number: route.number,
+                                name: route.name(language),
+                                detail: detail(for: route, language: language)
+                            )
+                            if index < rows.count - 1 {
+                                SeparatorRule(inset: 18 + Theme.Space.s3)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Space.s3)
+                    .card(radius: Theme.Radius.lg)
+                }
+
+                section("gallery.buttons".localized(language)) {
+                    VStack(spacing: Theme.Space.s2) {
+                        Button("onboarding.primary".localized(language)) {}
+                            .buttonStyle(.primaryClassical)
+                        Button("onboarding.secondary".localized(language)) {}
+                            .buttonStyle(.secondaryClassical)
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Space.screen)
+            .padding(.vertical, Theme.Space.s4)
+        }
+        .screenBackground()
+        .navigationTitle("settings.designSystem".localized(language))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+                    .foregroundStyle(Theme.accent)
+            }
+        }
+    }
+
+    private func detail(for route: Route, language: AppLanguage) -> String {
+        let km = "unit.km".localized(language)
+        let min = "unit.min".localized(language)
+        return "\(route.km) \(km) · \(route.minutes) \(min) · \(route.area(language))"
+    }
+
+    private func section<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.s3) {
+            Text(title).sectionLabel()
+            content()
+        }
+    }
+
+    private func swatch(_ color: Color, _ name: String) -> some View {
+        VStack(spacing: Theme.Space.s1) {
+            Theme.shape(Theme.Radius.sm)
+                .fill(color)
+                .frame(height: 44)
+                .overlay {
+                    Theme.shape(Theme.Radius.sm).strokeBorder(Theme.mist, lineWidth: 1)
+                }
+            Text(name)
+                .font(.system(size: 9))
+                .foregroundStyle(Theme.labelTertiary)
+        }
+    }
+}

@@ -1,0 +1,530 @@
+{
+  "_comment": "Bundled sample catalogue, extracted verbatim from the design mockup's inline script (routes, commentData, postData, collections). This is the ONLY place placeholder content lives — no screen hardcodes strings. When a backend arrives it replaces this file behind the repository protocols; nothing in the views changes. Two deliberate departures from the mockup are noted inline below.",
+  "routes": [
+    {
+      "id": "wukang",
+      "number": 1,
+      "km": 3.4,
+      "minutes": 52,
+      "breaks": 0,
+      "name": {
+        "en": "Wukang Road & the Concession Lanes",
+        "zh": "武康路与法租界弄堂"
+      },
+      "area": {
+        "en": "Xuhui",
+        "zh": "徐汇"
+      },
+      "kicker": {
+        "en": "Featured route",
+        "zh": "本月精选"
+      },
+      "tag1": {
+        "en": "Plane trees, unbroken",
+        "zh": "梧桐蔽日 · 全程连续"
+      },
+      "tag2": {
+        "en": "Morning",
+        "zh": "晨间"
+      },
+      "note": {
+        "en": "Shade for the whole length and no arterial crossing. South to north the lanes off Hunan Road open before nine; the north end returns you to Huaihai Road through Ferguson Lane.",
+        "zh": "全程有树荫，不必穿越主干道。由南向北走，湖南路一侧的弄堂九点前安静；北端经武康庭回到淮海路。"
+      },
+      "authorName": "张沁",
+      "authorInitial": "沁",
+      "walkCount": 9,
+      "downloadSize": "18 MB",
+      "points": [
+        {
+          "lat": 31.2103,
+          "lng": 121.4349
+        },
+        {
+          "lat": 31.2126,
+          "lng": 121.4337
+        },
+        {
+          "lat": 31.2148,
+          "lng": 121.4326
+        },
+        {
+          "lat": 31.2169,
+          "lng": 121.4318
+        },
+        {
+          "lat": 31.2163,
+          "lng": 121.4372
+        },
+        {
+          "lat": 31.2152,
+          "lng": 121.4424
+        },
+        {
+          "lat": 31.2124,
+          "lng": 121.4437
+        },
+        {
+          "lat": 31.2106,
+          "lng": 121.4397
+        },
+        {
+          "lat": 31.2103,
+          "lng": 121.4349
+        }
+      ],
+      "pin": {
+        "lat": 31.2138,
+        "lng": 121.436
+      },
+      "isFeatured": true
+    },
+    {
+      "id": "creek",
+      "number": 2,
+      "km": 4.8,
+      "minutes": 70,
+      "breaks": 1,
+      "name": {
+        "en": "Suzhou Creek, East Bank",
+        "zh": "苏州河东段"
+      },
+      "area": {
+        "en": "Hongkou",
+        "zh": "虹口"
+      },
+      "kicker": {
+        "en": "Word of mouth",
+        "zh": "口耳相传"
+      },
+      "tag1": {
+        "en": "Water the whole way",
+        "zh": "一路沿水"
+      },
+      "tag2": {
+        "en": "Evening",
+        "zh": "傍晚"
+      },
+      "note": {
+        "en": "Continuous promenade from Waibaidu Bridge west, with one break at the Wuzhen Road works where you cross inland for two hundred metres. Benches every few hundred paces.",
+        "zh": "自外白渡桥向西一路沿河，仅乌镇路施工段需内折约两百米。每隔几百步都有长椅。"
+      },
+      "authorName": "林小雨",
+      "authorInitial": "雨",
+      "walkCount": 4,
+      "downloadSize": "24 MB",
+      "points": [
+        {
+          "lat": 31.2456,
+          "lng": 121.4906
+        },
+        {
+          "lat": 31.2451,
+          "lng": 121.4848
+        },
+        {
+          "lat": 31.2447,
+          "lng": 121.4788
+        },
+        {
+          "lat": 31.2462,
+          "lng": 121.473
+        },
+        {
+          "lat": 31.2487,
+          "lng": 121.4668
+        },
+        {
+          "lat": 31.2479,
+          "lng": 121.4596
+        }
+      ],
+      "pin": {
+        "lat": 31.2462,
+        "lng": 121.476
+      },
+      "isFeatured": false
+    },
+    {
+      "id": "fuxing",
+      "number": 3,
+      "km": 2.1,
+      "minutes": 32,
+      "breaks": 0,
+      "name": {
+        "en": "Fuxing Park to Xintiandi",
+        "zh": "复兴公园至新天地"
+      },
+      "area": {
+        "en": "Huangpu",
+        "zh": "黄浦"
+      },
+      "kicker": {
+        "en": "Short walk",
+        "zh": "短途"
+      },
+      "tag1": {
+        "en": "Flat, lit at night",
+        "zh": "平坦 · 夜有灯"
+      },
+      "tag2": {
+        "en": "Any hour",
+        "zh": "全天"
+      },
+      "note": {
+        "en": "The reliable after-work loop. Park perimeter, then the lanes to Xintiandi; walk it twice over if you want an hour, which is what most people here do.",
+        "zh": "下班后最可靠的一圈。先绕公园，再走弄堂到新天地；想走满一小时就走两遍，这里多数人都这么做。"
+      },
+      "authorName": "Ben Qiu",
+      "authorInitial": "邱",
+      "walkCount": 12,
+      "downloadSize": "11 MB",
+      "points": [
+        {
+          "lat": 31.2199,
+          "lng": 121.4658
+        },
+        {
+          "lat": 31.2215,
+          "lng": 121.4676
+        },
+        {
+          "lat": 31.2231,
+          "lng": 121.4706
+        },
+        {
+          "lat": 31.2226,
+          "lng": 121.4742
+        },
+        {
+          "lat": 31.2209,
+          "lng": 121.4757
+        }
+      ],
+      "pin": {
+        "lat": 31.2222,
+        "lng": 121.4708
+      },
+      "isFeatured": false
+    },
+    {
+      "id": "bund",
+      "number": 4,
+      "km": 2.9,
+      "minutes": 45,
+      "breaks": 2,
+      "name": {
+        "en": "The Bund to Yuyuan",
+        "zh": "外滩至豫园"
+      },
+      "area": {
+        "en": "Huangpu",
+        "zh": "黄浦"
+      },
+      "kicker": {
+        "en": "Word of mouth",
+        "zh": "口耳相传"
+      },
+      "tag1": {
+        "en": "Crowded after ten",
+        "zh": "十点后拥挤"
+      },
+      "tag2": {
+        "en": "Early",
+        "zh": "清晨"
+      },
+      "note": {
+        "en": "Worth it before eight in the morning. Two forced detours around the tunnel ramps south of Yan'an Road are marked on the line.",
+        "zh": "八点前最值得走。延安路以南两处隧道匝道的绕行已标在线路上。"
+      },
+      "authorName": "M. Lau",
+      "authorInitial": "M",
+      "walkCount": 6,
+      "downloadSize": "15 MB",
+      "points": [
+        {
+          "lat": 31.2385,
+          "lng": 121.4901
+        },
+        {
+          "lat": 31.2352,
+          "lng": 121.4899
+        },
+        {
+          "lat": 31.232,
+          "lng": 121.4899
+        },
+        {
+          "lat": 31.2296,
+          "lng": 121.4913
+        },
+        {
+          "lat": 31.2274,
+          "lng": 121.4922
+        }
+      ],
+      "pin": {
+        "lat": 31.2325,
+        "lng": 121.4906
+      },
+      "isFeatured": false
+    },
+    {
+      "id": "century",
+      "number": 5,
+      "km": 5.6,
+      "minutes": 80,
+      "breaks": 0,
+      "name": {
+        "en": "Century Park Outer Loop",
+        "zh": "世纪公园外环"
+      },
+      "area": {
+        "en": "Pudong",
+        "zh": "浦东"
+      },
+      "kicker": {
+        "en": "Long walk",
+        "zh": "长途"
+      },
+      "tag1": {
+        "en": "No road crossings",
+        "zh": "无路口穿越"
+      },
+      "tag2": {
+        "en": "Weekend",
+        "zh": "周末"
+      },
+      "note": {
+        "en": "The longest uninterrupted walk in the collection: one closed loop, no traffic, gravel underfoot for most of it. Start at the north gate to end near the metro.",
+        "zh": "合辑中最长的一段不间断步行：一个闭环，无车流，多为碎石路面。北门出发，终点近地铁。"
+      },
+      "authorName": "沪上散步",
+      "authorInitial": "沪",
+      "walkCount": 3,
+      "downloadSize": "29 MB",
+      "points": [
+        {
+          "lat": 31.2246,
+          "lng": 121.547
+        },
+        {
+          "lat": 31.2231,
+          "lng": 121.5512
+        },
+        {
+          "lat": 31.22,
+          "lng": 121.5528
+        },
+        {
+          "lat": 31.2172,
+          "lng": 121.5502
+        },
+        {
+          "lat": 31.2178,
+          "lng": 121.5461
+        },
+        {
+          "lat": 31.221,
+          "lng": 121.5443
+        },
+        {
+          "lat": 31.2246,
+          "lng": 121.547
+        }
+      ],
+      "pin": {
+        "lat": 31.2208,
+        "lng": 121.5487
+      },
+      "isFeatured": false
+    }
+  ],
+  "_commentsNote": "Departure 1 from the mockup: the mockup showed the same four comments on whatever route you opened, but their pinned places all name Wukang Road. They are therefore attached to 'wukang' here, and the other four routes start with no notes. That is more honest than duplicating them onto routes they were not written about.",
+  "comments": [
+    {
+      "id": "c1",
+      "routeId": "wukang",
+      "authorName": "张沁",
+      "authorInitial": "沁",
+      "relativeTime": {
+        "en": "3 days ago",
+        "zh": "3 天前"
+      },
+      "body": {
+        "en": "Start from the south end — the north end drops you at a busy crossing if you go the other way.",
+        "zh": "从南端出发——反方向走的话，北端会把你丢在一个繁忙路口。"
+      },
+      "pinnedPlace": {
+        "en": "Wukang Rd × Hunan Rd",
+        "zh": "武康路 × 湖南路"
+      }
+    },
+    {
+      "id": "c2",
+      "routeId": "wukang",
+      "authorName": "Ben Qiu",
+      "authorInitial": "邱",
+      "relativeTime": {
+        "en": "2 days ago",
+        "zh": "2 天前"
+      },
+      "body": {
+        "en": "Walked it end to end on Sunday. Continuous, two benches near the middle.",
+        "zh": "周日整段走完。全程连续，中段有两张长椅。"
+      },
+      "pinnedPlace": {
+        "en": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "c3",
+      "routeId": "wukang",
+      "authorName": "林小雨",
+      "authorInitial": "雨",
+      "relativeTime": {
+        "en": "Yesterday",
+        "zh": "昨天"
+      },
+      "body": {
+        "en": "Best before nine. After that it is mostly people photographing the corner building.",
+        "zh": "九点前最好。之后基本都是在拍那栋转角建筑的人。"
+      },
+      "pinnedPlace": {
+        "en": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "c4",
+      "routeId": "wukang",
+      "authorName": "M. Lau",
+      "authorInitial": "M",
+      "relativeTime": {
+        "en": "6 hours ago",
+        "zh": "6 小时前"
+      },
+      "body": {
+        "en": "Detour through Ferguson Lane adds 400m and a coffee.",
+        "zh": "绕武康庭多 400 米，顺便一杯咖啡。"
+      },
+      "pinnedPlace": {
+        "en": "Wukang Rd 376",
+        "zh": "武康路 376 号"
+      }
+    }
+  ],
+  "posts": [
+    {
+      "id": "p1",
+      "authorName": "林小雨",
+      "authorInitial": "雨",
+      "routeId": "creek",
+      "relativeTime": {
+        "en": "2h",
+        "zh": "2 小时前"
+      },
+      "km": 4.8,
+      "minutes": 68,
+      "replyCount": 3,
+      "baseLikes": 12,
+      "note": {
+        "en": "Went at 6:30 and had the whole east bank to myself. Stopped for tea where the lane ends.",
+        "zh": "六点半出门，整段东岸只有我一个人。在弄堂尽头停下喝了杯茶。"
+      }
+    },
+    {
+      "id": "p2",
+      "authorName": "张沁",
+      "authorInitial": "沁",
+      "routeId": "wukang",
+      "relativeTime": {
+        "en": "Yesterday",
+        "zh": "昨天"
+      },
+      "km": 3.4,
+      "minutes": 52,
+      "replyCount": 7,
+      "baseLikes": 21,
+      "note": {
+        "en": "Third time this month. The plane trees have finally filled in over the crossing at Hunan Road.",
+        "zh": "这个月第三次。湖南路口的梧桐终于合上了。"
+      }
+    },
+    {
+      "id": "p3",
+      "authorName": "Ben Qiu",
+      "authorInitial": "邱",
+      "routeId": "fuxing",
+      "relativeTime": {
+        "en": "Tuesday",
+        "zh": "周二"
+      },
+      "km": 2.1,
+      "minutes": 33,
+      "replyCount": 1,
+      "baseLikes": 6,
+      "note": {
+        "en": "Short one after work, walked it twice over. No sudden ends, which is the whole reason it stays on my list.",
+        "zh": "下班后走的短线，走了两遍。全程没有断点，这也是它一直留在我列表里的原因。"
+      }
+    }
+  ],
+  "collections": [
+    {
+      "id": "concession",
+      "name": {
+        "en": "Six Concession Walks",
+        "zh": "法租界六走"
+      },
+      "curatorName": {
+        "en": "Curated by 张沁",
+        "zh": "由 张沁 策划"
+      },
+      "routeIds": [
+        "wukang",
+        "fuxing",
+        "bund"
+      ]
+    },
+    {
+      "id": "water",
+      "name": {
+        "en": "Water's Edge",
+        "zh": "沿水而行"
+      },
+      "curatorName": {
+        "en": "Curated by 沪上散步",
+        "zh": "由 沪上散步 策划"
+      },
+      "routeIds": [
+        "creek",
+        "century"
+      ]
+    }
+  ],
+  "_profileNote": "Departure 2 from the mockup: no statistics are seeded. The mockup hardcoded 34 walks / 118.6 km / 8.2 longest / 5 routes added; PLAN.md Phase 8 computes all four from stored walks, so seeding them here would only create numbers to contradict later.",
+  "profile": {
+    "name": "Ben Qiu",
+    "initial": "邱",
+    "joinedMonth": {
+      "en": "Walking Shanghai since August 2026",
+      "zh": "自 2026 年 8 月开始记录步行"
+    }
+  },
+  "_featuredNote": "The editorial wrapper for the monthly Featured screen. Which route it describes is NOT stored here - it is whichever route carries isFeatured, so there is one source of truth for that and a unit test asserting exactly one route claims it.",
+  "featured": {
+    "month": {
+      "en": "August 2026",
+      "zh": "二〇二六年八月"
+    },
+    "editorial": {
+      "en": "Chosen because it holds shade for the whole length and never dumps you onto an arterial road. Walk it south to north in the morning; the lanes off Hunan Road are open before nine.",
+      "zh": "入选的理由：全程有树荫，且不会把你甩到主干道上。清晨由南向北走，湖南路一侧的弄堂九点前都还安静。"
+    },
+    "curatorName": "张沁",
+    "curatorInitial": "沁",
+    "walkersThisMonth": 14
+  }
+}

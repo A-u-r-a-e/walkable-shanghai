@@ -1,0 +1,40 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "NSLocationWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walkable Shanghai uses your location to record the walk you are on: how far you have gone, how long it took, and how much of the route is left."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walkable Shanghai 使用你的位置来记录这次步行：走了多远、用了多久，以及路线还剩多少。"
+          }
+        }
+      }
+    },
+    "NSLocationAlwaysAndWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walkable Shanghai keeps recording your walk when the screen is locked, so putting your phone away does not cut the track short."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "锁屏后 Walkable Shanghai 会继续记录你的步行，收起手机也不会中断轨迹。"
+          }
+        }
+      }
+    }
+  }
+}

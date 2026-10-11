@@ -1,0 +1,624 @@
+import SwiftUI
+import MapKit
+
+/// The single map surface for the whole app.
+///
+/// Every screen that shows a map goes through this type. It declares all four
+/// modes the design calls for up front — discover, detail, track, build — even
+/// though Phase 2 only implements `discover`, so that the seam is visible and
+/// the later phases extend one file rather than adding parallel map views.
+///
+/// It is also the swap point named in the plan: MapKit was chosen for zero
+/// dependencies, no API keys, no tile bill and no China map-licensing burden of
+/// our own. If offline tile packs later force a move to MapLibre, this file is
+/// what gets rewritten and nothing else.
+struct RouteMapView: UIViewRepresentable {
+
+    enum Mode {
+        /// Every listed route drawn at once, with a numbered pin each.
+        case discover
+        /// One route, framed. Phase 3.
+        case detail
+        /// One route with live progress along it. Phase 4.
+        case track
+        /// Tap-to-drop point drawing. Phase 5.
+        case build
+    }
+
+    /// Read only so that flipping light/dark re-runs `updateUIView`. MapKit
+    /// caches overlay renderers, so without something to invalidate on, a grade
+    /// and a casing chosen for one appearance would survive into the other.
+    @Environment(\.colorScheme) private var colorScheme
+
+    let mode: Mode
+    /// The routes to draw. In `discover` this is the filtered list, so the map
+    /// and the sheet below it always agree.
+    let routes: [Route]
+    /// How much of the bottom of the map the sheet covers *at rest*, so the
+    /// camera frames the routes in the part you can actually see.
+    ///
+    /// Deliberately the sheet's resting height rather than its live height: if
+    /// the camera re-fitted every time the sheet moved, expanding the sheet
+    /// would zoom the map out until all the routes collapsed into one cluster.
+    /// A map should hold still while a panel slides over it.
+    var bottomInset: CGFloat = 0
+    var topInset: CGFloat = 0
+    var onSelectRoute: ((String) -> Void)?
+
+    /// `track` only: how much of the route has been walked, 0 to 1. The line is
+    /// drawn dashed ahead of this point and solid behind it.
+    var walkedFraction: Double = 0
+    /// `track` only: where to draw the walker.
+    var walkerCoordinate: CLLocationCoordinate2D?
+    /// `track` only: keep the camera on the walker as they move.
+    var followsWalker: Bool = false
+
+    /// `build` only: the points dropped so far, in the order they were tapped.
+    var draftPoints: [CLLocationCoordinate2D] = []
+    /// `build` only: called with the coordinate under a tap.
+    var onAddPoint: ((CLLocationCoordinate2D) -> Void)?
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> MKMapView {
+        let map = MKMapView()
+        map.delegate = context.coordinator
+
+        // Muted emphasis is MapKit's own "step back so overlays read" style, and
+        // it does most of the work of matching the app's ground. Points of
+        // interest are switched off entirely: this app is about the line you
+        // walk, and Apple's default pins compete with our own.
+        let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
+        configuration.pointOfInterestFilter = .excludingAll
+        map.preferredConfiguration = configuration
+
+        // The basemap follows the app's appearance explicitly rather than by
+        // inheritance, so the grade and the tiles under it can never disagree
+        // about which mode they are in.
+        map.overrideUserInterfaceStyle = .unspecified
+
+        map.showsCompass = false
+        map.showsScale = false
+        map.isPitchEnabled = false
+        map.isRotateEnabled = false
+        map.showsUserLocation = false  // Real location is Phase 4.
+
+        map.register(
+            RoutePinView.self,
+            forAnnotationViewWithReuseIdentifier: RoutePinView.reuseIdentifier
+        )
+
+        if mode == .track {
+            // Tracking is the one mode where the walker should not be able to
+            // shove the map somewhere the camera will immediately drag back.
+            map.isScrollEnabled = false
+            map.isZoomEnabled = false
+        }
+
+        if mode == .build {
+            let tap = UITapGestureRecognizer(
+                target: context.coordinator,
+                action: #selector(Coordinator.handleBuildTap(_:))
+            )
+            map.addGestureRecognizer(tap)
+            // Somewhere central and legible to start drawing from. The walker
+            // pans to where they actually mean before their first tap.
+            map.setRegion(
+                MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: 31.2138, longitude: 121.4360),
+                    latitudinalMeters: 2200,
+                    longitudinalMeters: 2200
+                ),
+                animated: false
+            )
+        }
+        return map
+    }
+
+    func updateUIView(_ map: MKMapView, context: Context) {
+        context.coordinator.parent = self
+
+        // Redraw and re-frame only when the set of routes actually changes —
+        // a filter change or the first load. Panning and sheet movement leave
+        // the camera alone.
+        // The appearance is part of the signature: a light-to-dark flip has to
+        // redraw for the same reason a filter change does — the overlays are
+        // styled for one mode and cached.
+        let signature = routes.map(\.id).joined(separator: ",") + "|\(colorScheme)"
+        let routesChanged = context.coordinator.lastSignature != signature
+
+        if routesChanged {
+            context.coordinator.lastSignature = signature
+            redraw(map)
+            frame(map, animated: context.coordinator.hasFramedOnce)
+            context.coordinator.hasFramedOnce = true
+        }
+
+        if mode == .build {
+            let signature = draftPoints.map { "\($0.latitude),\($0.longitude)" }.joined(separator: ";")
+            if context.coordinator.lastDraftSignature != signature {
+                context.coordinator.lastDraftSignature = signature
+                redrawDraft(map)
+            }
+            return
+        }
+
+        guard mode == .track else { return }
+
+        // Tracking is the one mode that redraws continuously: the walked line
+        // grows and the walker moves on every fix. Redrawing only when the
+        // progress actually changed keeps this from thrashing on every SwiftUI
+        // update.
+        let step = (walkedFraction * 1000).rounded()
+        if routesChanged || context.coordinator.lastWalkedStep != step {
+            context.coordinator.lastWalkedStep = step
+            redrawWalked(map)
+        }
+        if followsWalker, let walkerCoordinate {
+            context.coordinator.follow(map, to: walkerCoordinate)
+        }
+    }
+
+    // MARK: - Drawing
+
+    private func redraw(_ map: MKMapView) {
+        map.removeOverlays(map.overlays)
+        map.removeAnnotations(map.annotations)
+
+        // Grade the basemap towards the app's landscape by laying a sheet over
+        // it — added first, so everything below draws through it and everything
+        // after draws on top at full strength.
+        //
+        // This replaces an earlier attempt that put a SwiftUI `.saturation()`
+        // on the whole map view. That desaturated the route lines along with
+        // Apple's greens and blues, which defeated the point: the route is the
+        // one thing that must stay saturated.
+        map.addOverlay(BasemapGradeOverlay.make(), level: .aboveRoads)
+
+        for route in routes {
+            let coordinates = route.points.map(\.clLocationCoordinate)
+            guard coordinates.count > 1 else { continue }
+
+            // Two lines per route, as in the source design: a wide, almost
+            // invisible casing that lifts the route off the map, and a thin
+            // accent line on top. One line alone disappears over pale streets.
+            let casing = RoutePolyline(coordinates: coordinates, count: coordinates.count)
+            casing.role = .casing
+            casing.routeId = route.id
+
+            let line = RoutePolyline(coordinates: coordinates, count: coordinates.count)
+            line.role = .line
+            line.routeId = route.id
+
+            // `.aboveLabels` rather than `.aboveRoads`: the grade sits at
+            // `.aboveRoads`, and MapKit only guarantees ordering *between*
+            // levels, not by insertion order within one. Putting the routes a
+            // level up is what keeps them from being faded by their own grade.
+            map.addOverlay(casing, level: .aboveLabels)
+            map.addOverlay(line, level: .aboveLabels)
+        }
+
+        if mode == .track {
+            redrawWalked(map)
+        }
+
+        if mode == .discover {
+            map.addAnnotations(routes.map {
+                RoutePinAnnotation(routeId: $0.id, number: $0.number, coordinate: $0.pin.clLocationCoordinate)
+            })
+        }
+    }
+
+    /// Redraws just the walked part of the line and the walker dot, leaving the
+    /// route underneath alone.
+    private func redrawWalked(_ map: MKMapView) {
+        for overlay in map.overlays where (overlay as? RoutePolyline)?.role == .walked {
+            map.removeOverlay(overlay)
+        }
+        for annotation in map.annotations where annotation is WalkerAnnotation {
+            map.removeAnnotation(annotation)
+        }
+
+        guard let route = routes.first else { return }
+        let full = route.points.map(\.clLocationCoordinate)
+
+        let walked = RouteGeometry.prefix(full, fraction: walkedFraction)
+        if walked.count > 1 {
+            let line = RoutePolyline(coordinates: walked, count: walked.count)
+            line.role = .walked
+            line.routeId = route.id
+            map.addOverlay(line, level: .aboveLabels)
+        }
+
+        if let walkerCoordinate {
+            map.addAnnotation(WalkerAnnotation(coordinate: walkerCoordinate))
+        }
+    }
+
+    /// Redraws the route being drawn: a dotted line through the points, the
+    /// first one filled and the rest hollow, so the direction of travel is
+    /// readable at a glance.
+    private func redrawDraft(_ map: MKMapView) {
+        map.removeOverlays(map.overlays.filter { !($0 is BasemapGradeOverlay) })
+        map.removeAnnotations(map.annotations)
+
+        if draftPoints.count > 1 {
+            let line = RoutePolyline(coordinates: draftPoints, count: draftPoints.count)
+            line.role = .draft
+            map.addOverlay(line, level: .aboveLabels)
+        }
+        map.addAnnotations(draftPoints.enumerated().map { index, coordinate in
+            DraftPointAnnotation(coordinate: coordinate, isFirst: index == 0, index: index)
+        })
+    }
+
+    private func frame(_ map: MKMapView, animated: Bool) {
+        let allPoints = routes.flatMap(\.points).map { MKMapPoint($0.clLocationCoordinate) }
+        guard !allPoints.isEmpty else { return }
+
+        let rect = allPoints.reduce(MKMapRect.null) { partial, point in
+            partial.union(MKMapRect(origin: point, size: MKMapSize(width: 0, height: 0)))
+        }
+        guard !rect.isNull else { return }
+
+        map.setVisibleMapRect(
+            rect,
+            edgePadding: UIEdgeInsets(top: topInset + 24, left: 40, bottom: bottomInset + 24, right: 40),
+            animated: animated
+        )
+    }
+
+    // MARK: - Coordinator
+
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: RouteMapView
+        var lastSignature: String?
+        var hasFramedOnce = false
+        var lastWalkedStep: Double = -1
+        var lastDraftSignature: String?
+
+        @objc func handleBuildTap(_ gesture: UITapGestureRecognizer) {
+            guard let map = gesture.view as? MKMapView else { return }
+            let point = gesture.location(in: map)
+            parent.onAddPoint?(map.convert(point, toCoordinateFrom: map))
+        }
+        private var hasCenteredOnWalker = false
+
+        /// Keeps the walker in view without fighting the walker's own panning:
+        /// the first fix zooms in, and after that the camera only re-centres.
+        func follow(_ map: MKMapView, to coordinate: CLLocationCoordinate2D) {
+            if hasCenteredOnWalker {
+                map.setCenter(coordinate, animated: true)
+            } else {
+                hasCenteredOnWalker = true
+                map.setRegion(
+                    MKCoordinateRegion(center: coordinate, latitudinalMeters: 700, longitudinalMeters: 700),
+                    animated: true
+                )
+            }
+        }
+
+        init(_ parent: RouteMapView) {
+            self.parent = parent
+        }
+
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let wash = overlay as? BasemapGradeOverlay {
+                let renderer = MKPolygonRenderer(polygon: wash)
+                // In light mode the grade pulls Apple's basemap towards the
+                // app's own sage ground, so the map reads as landscape rather
+                // than as street-atlas grey and the route stays the most
+                // saturated thing on it. In dark mode it inverts: MapKit's dark
+                // map is already dim, so grading it lighter would flatten the
+                // green instead of lifting it. The sheet goes *darker* — and it
+                // is a near-black green rather than pure black, so the map does
+                // not fall out of the palette.
+                let isDark = mapView.traitCollection.userInterfaceStyle == .dark
+                renderer.fillColor = isDark
+                    ? UIColor(Theme.Map.gradeDark).withAlphaComponent(Theme.Map.gradeDarkAlpha)
+                    : UIColor(Theme.Map.gradeLight).withAlphaComponent(Theme.Map.gradeLightAlpha)
+                renderer.strokeColor = .clear
+                renderer.lineWidth = 0
+                return renderer
+            }
+            guard let polyline = overlay as? RoutePolyline else {
+                return MKOverlayRenderer(overlay: overlay)
+            }
+            let renderer = MKPolylineRenderer(polyline: polyline)
+            switch polyline.role {
+            case .casing:
+                // The casing lifts the line off the map. On a dark basemap an
+                // ink casing is invisible, so it flips to a light one. Both were
+                // strengthened when the basemap went green: a green line on a
+                // green map needs more separation than a green line on grey.
+                let isDark = mapView.traitCollection.userInterfaceStyle == .dark
+                renderer.strokeColor = UIColor(isDark ? Theme.Map.casingDark : Theme.Map.casingLight)
+                renderer.lineWidth = Theme.Map.casingWidth
+            case .line:
+                if parent.mode == .track {
+                    // The route ahead of you: present, but plainly not yet
+                    // done. Mist green — a different step of the ramp from the
+                    // deep green behind you, not the same green faded, so the
+                    // two halves read as two states rather than as one line
+                    // with a rendering problem.
+                    renderer.strokeColor = UIColor(Theme.accentMuted)
+                        .withAlphaComponent(Theme.Map.aheadAlpha)
+                    renderer.lineWidth = Theme.Map.aheadWidth
+                    renderer.lineDashPattern = Theme.Map.aheadDash
+                } else {
+                    renderer.strokeColor = UIColor(Theme.accent)
+                        .withAlphaComponent(Theme.Map.lineAlpha)
+                    renderer.lineWidth = Theme.Map.lineWidth
+                }
+            case .draft:
+                renderer.strokeColor = UIColor(Theme.accentStrong)
+                    .withAlphaComponent(Theme.Map.draftAlpha)
+                renderer.lineWidth = Theme.Map.draftWidth
+                renderer.lineDashPattern = Theme.Map.draftDash
+            case .walked:
+                // The ground you have covered: solid, heavier, and the deep
+                // green at the front of the three layers.
+                renderer.strokeColor = UIColor(Theme.accent)
+                renderer.lineWidth = Theme.Map.walkedWidth
+            }
+            renderer.lineCap = .round
+            renderer.lineJoin = .round
+            return renderer
+        }
+
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if let draft = annotation as? DraftPointAnnotation {
+                let view = mapView.dequeueReusableAnnotationView(
+                    withIdentifier: DraftPointView.reuseIdentifier
+                ) as? DraftPointView ?? DraftPointView(
+                    annotation: annotation,
+                    reuseIdentifier: DraftPointView.reuseIdentifier
+                )
+                view.annotation = annotation
+                view.configure(isFirst: draft.isFirst, index: draft.index)
+                return view
+            }
+            if annotation is WalkerAnnotation {
+                let view = mapView.dequeueReusableAnnotationView(
+                    withIdentifier: WalkerView.reuseIdentifier
+                ) as? WalkerView ?? WalkerView(annotation: annotation, reuseIdentifier: WalkerView.reuseIdentifier)
+                view.annotation = annotation
+                return view
+            }
+            guard let pin = annotation as? RoutePinAnnotation else { return nil }
+            let view = mapView.dequeueReusableAnnotationView(
+                withIdentifier: RoutePinView.reuseIdentifier,
+                for: pin
+            ) as? RoutePinView
+            view?.configure(number: pin.number, routeName: pin.title ?? "")
+            return view
+        }
+
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            guard let pin = view.annotation as? RoutePinAnnotation else { return }
+            // Deselect straight away: the pin is a button, not a state. Leaving
+            // it selected would show a callout we do not want and would stop a
+            // second tap from working.
+            mapView.deselectAnnotation(pin, animated: false)
+            parent.onSelectRoute?(pin.routeId)
+        }
+    }
+}
+
+// MARK: - Overlay model
+
+/// A route line tagged with what it is drawing, so one renderer can style the
+/// casing and the line differently without comparing object identity.
+final class RoutePolyline: MKPolyline {
+    enum Role { case casing, line, walked, draft }
+    var role: Role = .line
+    var routeId: String = ""
+}
+
+// MARK: - Annotation model
+
+final class RoutePinAnnotation: NSObject, MKAnnotation {
+    let routeId: String
+    let number: Int
+    let coordinate: CLLocationCoordinate2D
+    var title: String?
+
+    init(routeId: String, number: Int, coordinate: CLLocationCoordinate2D, title: String? = nil) {
+        self.routeId = routeId
+        self.number = number
+        self.coordinate = coordinate
+        self.title = title
+    }
+}
+
+/// The numbered disc that marks a route on the discover map.
+///
+/// Built by hand rather than with `MKMarkerAnnotationView` because the system
+/// marker is a filled teardrop in Apple's red, which would be the only thing on
+/// the screen that is not part of this palette.
+final class RoutePinView: MKAnnotationView {
+
+    static let reuseIdentifier = "RoutePin"
+
+    private let label = UILabel()
+    private let disc = UIView()
+
+    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        frame = CGRect(x: 0, y: 0, width: 34, height: 34)
+        centerOffset = .zero
+        canShowCallout = false
+        backgroundColor = .clear
+
+        disc.frame = bounds
+        // Mist green in light, so the pin belongs to the landscape it sits on;
+        // raised forest in dark, so it reads *against* one. Either way it is
+        // never the page ground, which in dark mode is nearly the map.
+        disc.backgroundColor = UIColor(Theme.pinDisc)
+        disc.layer.cornerRadius = 17
+        disc.layer.borderWidth = Theme.Map.pinRingWidth
+        disc.layer.borderColor = UIColor(Theme.accent).cgColor
+        disc.layer.shadowColor = UIColor(Theme.Map.pinShadow).cgColor
+        disc.layer.shadowOpacity = Theme.Map.pinShadowOpacity
+        disc.layer.shadowRadius = 4
+        disc.layer.shadowOffset = CGSize(width: 0, height: 2)
+        disc.isUserInteractionEnabled = false
+        addSubview(disc)
+
+        label.frame = bounds
+        label.textAlignment = .center
+        // Tabular figures, so a 1 and a 4 sit identically inside the disc.
+        label.font = .monospacedDigitSystemFont(ofSize: 15, weight: .medium)
+        label.textColor = UIColor(Theme.accent)
+        label.isUserInteractionEnabled = false
+        addSubview(label)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(number: Int, routeName: String) {
+        label.text = "\(number)"
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = routeName.isEmpty ? "\(number)" : routeName
+        accessibilityIdentifier = "route-pin-\(number)"
+    }
+}
+
+// MARK: - Basemap grading
+
+/// The sheet that turns Apple's basemap into this app's landscape.
+///
+/// MapKit exposes no tile filter, so the grade is produced by drawing a
+/// translucent sheet across the map — beneath the routes and pins, which
+/// therefore keep their full green. The colour and direction flip with the
+/// appearance; see the renderer.
+final class BasemapGradeOverlay: MKPolygon {
+
+    /// The box is far larger than anything this app will ever show; it exists
+    /// only so the grade never runs out at the edge of a pan.
+    static func make() -> BasemapGradeOverlay {
+        let corners = [
+            CLLocationCoordinate2D(latitude: 10, longitude: 90),
+            CLLocationCoordinate2D(latitude: 55, longitude: 90),
+            CLLocationCoordinate2D(latitude: 55, longitude: 150),
+            CLLocationCoordinate2D(latitude: 10, longitude: 150),
+        ]
+        return BasemapGradeOverlay(coordinates: corners, count: corners.count)
+    }
+}
+
+// MARK: - Walker
+
+/// The walker's own position during a recorded walk.
+final class WalkerAnnotation: NSObject, MKAnnotation {
+    dynamic var coordinate: CLLocationCoordinate2D
+
+    init(coordinate: CLLocationCoordinate2D) {
+        self.coordinate = coordinate
+    }
+}
+
+/// An accent disc with a soft halo, pulsing slowly.
+///
+/// Not `MKUserLocationView`: this dot marks progress along a *route*, which
+/// during a simulated or replayed walk is not the same place as the device. It
+/// also has to match the design, and the system dot is Apple blue.
+final class WalkerView: MKAnnotationView {
+
+    static let reuseIdentifier = "Walker"
+
+    private let halo = UIView()
+    private let core = UIView()
+
+    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+        backgroundColor = .clear
+        canShowCallout = false
+        isAccessibilityElement = false
+
+        halo.frame = bounds
+        halo.backgroundColor = UIColor(Theme.accent).withAlphaComponent(Theme.Map.haloAlpha)
+        halo.layer.cornerRadius = 15
+        halo.isUserInteractionEnabled = false
+        addSubview(halo)
+
+        core.frame = CGRect(x: 9, y: 9, width: 12, height: 12)
+        core.backgroundColor = UIColor(Theme.accent)
+        core.layer.cornerRadius = 6
+        core.layer.borderWidth = 2
+        core.layer.borderColor = UIColor(Theme.pinDisc).cgColor
+        core.isUserInteractionEnabled = false
+        addSubview(core)
+
+        pulse()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    /// A slow breath, not a blink — it should read as "live" at a glance without
+    /// pulling the eye away from the line.
+    private func pulse() {
+        let animation = CABasicAnimation(keyPath: "transform.scale")
+        animation.fromValue = 0.75
+        animation.toValue = 1.25
+        animation.duration = 1.4
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        halo.layer.add(animation, forKey: "pulse")
+    }
+}
+
+// MARK: - Draft points
+
+/// One point the walker dropped while drawing a route.
+final class DraftPointAnnotation: NSObject, MKAnnotation {
+    let coordinate: CLLocationCoordinate2D
+    let isFirst: Bool
+    let index: Int
+
+    init(coordinate: CLLocationCoordinate2D, isFirst: Bool, index: Int) {
+        self.coordinate = coordinate
+        self.isFirst = isFirst
+        self.index = index
+    }
+}
+
+/// A small accent ring; filled for the first point, hollow for the rest.
+///
+/// The fill is the only thing distinguishing the start, which is all the
+/// distinction it needs — a route you are drawing has a beginning and a
+/// direction, and nothing else about the points differs.
+final class DraftPointView: MKAnnotationView {
+
+    static let reuseIdentifier = "DraftPoint"
+
+    private let dot = UIView()
+
+    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        frame = CGRect(x: 0, y: 0, width: 16, height: 16)
+        backgroundColor = .clear
+        canShowCallout = false
+
+        dot.frame = bounds
+        dot.layer.cornerRadius = 8
+        dot.layer.borderWidth = 2
+        dot.layer.borderColor = UIColor(Theme.accent).cgColor
+        dot.isUserInteractionEnabled = false
+        addSubview(dot)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(isFirst: Bool, index: Int) {
+        dot.backgroundColor = isFirst ? UIColor(Theme.accent) : UIColor(Theme.pinDisc)
+        isAccessibilityElement = true
+        accessibilityIdentifier = "draft-point-\(index)"
+    }
+}
