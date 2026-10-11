@@ -28,10 +28,12 @@ struct MapDiscoverScreen: View {
     @State private var detent: Detent = .peek
     @State private var dragTranslation: CGFloat = 0
     @State private var selectedRouteId: String?
+    /// The expanded card's height. Kept while the card is collapsed, so a drag
+    /// up from the collapsed card has a height to grow towards.
     @State private var cardHeight: CGFloat = 0
-    /// The route whose card has reported its height. The map waits for it
-    /// before drawing that route alone, so the frame clears the card's real
-    /// height rather than the zero it starts at.
+    /// The route whose expanded card has reported its height. The map waits
+    /// for it before drawing that route alone, so the frame clears the whole
+    /// card rather than a stale or collapsed height.
     @State private var measuredRouteId: String?
     @State private var trackingRoute: Route?
 
@@ -203,8 +205,9 @@ struct MapDiscoverScreen: View {
                         // The tab bar draws over the sheet, as it does over the
                         // list; the same clearance keeps Begin route out from under it.
                         .padding(.bottom, Self.tabBarClearance)
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-                            cardHeight = $0
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            guard detent == .full else { return }
+                            cardHeight = height
                             measuredRouteId = route.id
                         }
                     }
@@ -301,6 +304,8 @@ struct MapDiscoverScreen: View {
     /// Opens a route's card from its row or its pin, with the sheet raised so
     /// the whole card shows.
     private func showCard(_ routeId: String) {
+        // Forget the last measurement, so the map waits for this card's.
+        measuredRouteId = nil
         withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
             selectedRouteId = routeId
             detent = .full

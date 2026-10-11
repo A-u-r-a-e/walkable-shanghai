@@ -46,6 +46,17 @@ final class RouteCardUITests: XCTestCase {
         attachScreenshot(app, "route-card-collapsed-en")
     }
 
+    func testReopeningAfterCollapsingShowsTheWholeCard() {
+        let app = launchWalkable()
+        openCard(app, "wukang")
+        anyElement(app, "sheet-handle").tap()
+        XCTAssertFalse(anyElement(app, "start-walking-button").exists)
+        anyElement(app, "route-card-close").tap()
+        openCard(app, "wukang")
+        XCTAssertTrue(anyElement(app, "start-walking-button").isHittable)
+        attachScreenshot(app, "route-card-reopened-en")
+    }
+
     func testCloseReturnsToTheList() {
         let app = launchWalkable()
         openCard(app, "creek")
