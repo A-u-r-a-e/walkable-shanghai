@@ -37,12 +37,22 @@ extension XCTestCase {
 
     /// A row below the fold still exists to XCUITest, and tapping it lands on
     /// whatever covers it. Expand the sheet first when the row is not hittable.
+    /// The list is lazy, so at the largest text sizes a row further down is not
+    /// built at all until the list is scrolled to it.
     func revealRow(_ app: XCUIApplication, _ routeId: String) -> XCUIElement {
         let row = app.buttons["route-row-\(routeId)"]
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "row \(routeId) missing")
-        if !row.isHittable {
+        if !(row.waitForExistence(timeout: 5) && row.isHittable) {
             anyElement(app, "sheet-handle").tap()
+            Thread.sleep(forTimeInterval: 1.0)
         }
+        // Swipe the sheet's own list: a swipe from the middle of the screen
+        // would pan the map instead.
+        let list = app.scrollViews.containing(NSPredicate(format: "identifier BEGINSWITH 'route-row-'")).firstMatch
+        for _ in 0..<4 where !(row.exists && row.isHittable) {
+            list.swipeUp()
+            Thread.sleep(forTimeInterval: 0.6)
+        }
+        XCTAssertTrue(row.exists, "row \(routeId) missing")
         return row
     }
 

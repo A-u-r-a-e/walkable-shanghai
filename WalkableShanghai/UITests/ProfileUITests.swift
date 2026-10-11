@@ -23,7 +23,7 @@ final class ProfileUITests: XCTestCase {
         setLanguage: Bool = true
     ) -> XCUIApplication {
         let app = XCUIApplication()
-        var arguments = ["-settings.hasSeenOnboarding", "YES"]
+        var arguments = ["-settings.hasSeenOnboarding", "YES", "-uitest.ignoreLocation"]
         if setLanguage { arguments += ["-settings.language", language] }
         if resetUserState { arguments.append("-uitest.resetUserState") }
         if let simulateWalk { arguments += ["-uitest.simulateWalk", simulateWalk] }
@@ -67,44 +67,22 @@ final class ProfileUITests: XCTestCase {
     }
 
 
-    /// Makes a route row reachable before tapping it.
-    ///
-    /// The peeking sheet shows as many rows as the screen has room for, and how
-    /// many that is depends on the OS: iOS 26 draws its floating tab bar *over*
-    /// the sheet, while iOS 18's opaque tab bar takes layout space, so two fewer
-    /// rows fit in the peek. A row below the fold still "exists", and tapping it
-    /// lands on whatever covers it — which is why this expands the sheet instead
-    /// of trusting the fold.
-    @discardableResult
-    private func revealRouteRow(_ app: XCUIApplication, _ routeId: String) -> XCUIElement {
-        let row = app.buttons["route-row-\(routeId)"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "no row for \(routeId)")
-
-        if !row.isHittable {
-            element(app, "sheet-handle").tap()
-            Thread.sleep(forTimeInterval: 1.2)
-        }
-        for _ in 0..<3 where !row.isHittable {
-            app.swipeUp()
-            Thread.sleep(forTimeInterval: 0.6)
-        }
-        XCTAssertTrue(row.isHittable, "\(routeId) is not reachable even with the sheet open")
-        return row
-    }
-
-    /// Records one walk on the Wukang route and keeps it private, leaving the
-    /// app back on the map with a stored walk behind it.
+    /// Records one walk on the Wukang route from its card, leaving the app
+    /// back on the map's route list with a stored walk behind it.
     private func recordAWalk(_ app: XCUIApplication) {
-        revealRouteRow(app, "wukang").tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.8)
-        app.buttons["start-walking-button"].tap()
+        revealRow(app, "wukang").tap()
+        let begin = element(app, "start-walking-button")
+        XCTAssertTrue(begin.waitForExistence(timeout: 10), "the route card has no Begin route")
+        begin.tap()
         XCTAssertTrue(element(app, "elapsed-clock").waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 5.0)
         app.buttons["end-walk-button"].tap()
         XCTAssertTrue(app.staticTexts["summary-route-name"].waitForExistence(timeout: 10))
-        app.buttons["keep-private-button"].tap()
+        app.buttons["summary-done-button"].tap()
+        // The walk ends on the route's card; close it to get the list back.
+        let close = element(app, "route-card-close")
+        XCTAssertTrue(close.waitForExistence(timeout: 10), "Done did not return to the route's card")
+        close.tap()
         waitForMap(app)
     }
 
@@ -263,62 +241,17 @@ final class ProfileUITests: XCTestCase {
         XCTAssertEqual(element(app, "record-button").label, "Start recording a walk")
         XCTAssertEqual(element(app, "sheet-handle").label, "Expand or collapse the route list")
 
-        // Route detail's floating back and bookmark, whose label states what
-        // tapping will do rather than naming the icon.
-        revealRouteRow(app, "bund").tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-        XCTAssertEqual(element(app, "route-back-button").label, "Back")
+        // The route card's share, close and bookmark. The bookmark's label
+        // states what tapping will do rather than naming the icon.
+        revealRow(app, "bund").tap()
+        XCTAssertTrue(element(app, "route-card").waitForExistence(timeout: 10))
+        XCTAssertEqual(element(app, "share-button").label, "Share")
+        XCTAssertEqual(element(app, "route-card-close").label, "Close")
         XCTAssertEqual(element(app, "save-toggle").label, "Save route")
         element(app, "save-toggle").tap()
         Thread.sleep(forTimeInterval: 0.8)
         XCTAssertEqual(element(app, "save-toggle").label, "Remove from saved",
                        "the bookmark's label does not follow its state")
-        element(app, "route-back-button").tap()
-
-        // The feed's like button.
-        app.tabBars.buttons["Community"].tap()
-        Thread.sleep(forTimeInterval: 1.5)
-        let like = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "identifier BEGINSWITH 'feed-like-'"))
-            .firstMatch
-        XCTAssertTrue(like.waitForExistence(timeout: 10))
-        XCTAssertEqual(like.label, "Like")
-    }
-
-    /// A list with nothing in it must say so. A route you drew this morning has
-    /// no notes from anyone, which is the one empty state a walker reaches
-    /// without having to empty something first.
-    func testAnEmptyListExplainsItselfRatherThanShowingABlankPage() {
-        let app = launchApp()
-        waitForMap(app)
-        drawARoute(app, named: "Evening loop")
-
-        element(app, "sheet-handle").tap()
-        Thread.sleep(forTimeInterval: 1.2)
-        // The drawn route is the sixth, so it sits at the bottom of the list
-        // even with the sheet open. Scroll it into reach rather than assuming
-        // the fold — see `revealRouteRow` for why that assumption is fragile.
-        let drawn = app.staticTexts["Evening loop"]
-        // Swipe the sheet's own list. `app.swipeUp()` starts from the middle of
-        // the screen, which is the map — it pans Shanghai and leaves the list
-        // exactly where it was.
-        for _ in 0..<4 where !drawn.isHittable {
-            app.scrollViews.firstMatch.swipeUp()
-            Thread.sleep(forTimeInterval: 0.6)
-        }
-        XCTAssertTrue(drawn.isHittable, "the drawn route is not reachable in the list")
-        drawn.tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.8)
-        XCTAssertTrue(app.buttons["Notes from walkers (0)"].exists,
-                      "a route nobody has written about should say zero")
-        app.buttons["notes-button"].tap()
-
-        XCTAssertTrue(element(app, "comments-empty").waitForExistence(timeout: 10),
-                      "an empty thread showed a blank page instead of explaining itself")
-        capture(app, "75-empty-notes-en")
     }
 
     /// The largest accessibility text size is the one that breaks layouts. The

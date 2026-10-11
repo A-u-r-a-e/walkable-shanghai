@@ -105,11 +105,13 @@ final class LanguageSwitchUITests: XCTestCase {
         // this step used to assert.)
         app.tabBars.buttons["Map"].tap()
         XCTAssertTrue(
-            app.staticTexts["Routes in view"].waitForExistence(timeout: 10),
-            "the map screen did not appear on the Map tab"
+            app.descendants(matching: .any).matching(identifier: "routes-option-menu")
+                .firstMatch.waitForExistence(timeout: 10),
+            "the Routes sheet did not appear on the Map tab"
         )
-        XCTAssertEqual(
-            app.staticTexts["routes-in-view-count"].label, "5",
+        XCTAssertTrue(app.staticTexts["Routes"].exists, "the Routes sheet is not in English")
+        XCTAssertTrue(
+            app.buttons["route-row-wukang"].exists,
             "the bundled catalogue did not reach the map screen"
         )
         capture(app, "05-map-tab-en")

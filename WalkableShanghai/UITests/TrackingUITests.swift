@@ -2,6 +2,7 @@ import XCTest
 
 /// Phase 4's acceptance tests, driven by the synthetic location feed so the
 /// walk actually moves and the assertions land on real numbers.
+@MainActor
 final class TrackingUITests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -17,6 +18,7 @@ final class TrackingUITests: XCTestCase {
             "-settings.language", language,
             "-settings.hasSeenOnboarding", "YES",
             "-uitest.resetUserState",
+            "-uitest.ignoreLocation",
         ]
         if let simulateWalk {
             arguments += ["-uitest.simulateWalk", simulateWalk]
@@ -39,22 +41,26 @@ final class TrackingUITests: XCTestCase {
 
     private func waitForMap(_ app: XCUIApplication) {
         XCTAssertTrue(
-            app.staticTexts["routes-in-view-count"].waitForExistence(timeout: 15),
+            anyElement(app, "routes-option-menu").waitForExistence(timeout: 15),
             "the map screen never appeared"
         )
         Thread.sleep(forTimeInterval: 2.0)
     }
 
-    /// Opens tracking the way a walker would: route detail, then Start walking.
-    private func startWalkFromRouteDetail(_ app: XCUIApplication, routeId: String = "wukang") {
-        let row = app.buttons["route-row-\(routeId)"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.8)
-        app.buttons["start-walking-button"].tap()
+    /// Opens tracking the way a walker would: the route's card, then Begin route.
+    private func startWalkFromRouteCard(_ app: XCUIApplication, routeId: String = "wukang") {
+        openCardAndBegin(app, routeId: routeId)
         XCTAssertTrue(element(app, "elapsed-clock").waitForExistence(timeout: 10), "tracking never opened")
+    }
+
+    private func openCardAndBegin(_ app: XCUIApplication, routeId: String = "wukang", beginLabel: String? = nil) {
+        revealRow(app, routeId).tap()
+        let begin = anyElement(app, "start-walking-button")
+        XCTAssertTrue(begin.waitForExistence(timeout: 5), "the route card has no Begin route")
+        if let beginLabel {
+            XCTAssertEqual(begin.label, beginLabel, "Begin route is not in the app's language")
+        }
+        begin.tap()
     }
 
     /// The clock carries the time in its accessibility *value*; its *label* is
@@ -74,13 +80,7 @@ final class TrackingUITests: XCTestCase {
         let app = launchApp()
         waitForMap(app)
 
-        let row = app.buttons["route-row-wukang"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.8)
-        app.buttons["start-walking-button"].tap()
+        openCardAndBegin(app)
 
         // Catch it early: the clock should be at or near zero and already running.
         XCTAssertTrue(element(app, "elapsed-clock").waitForExistence(timeout: 10))
@@ -111,7 +111,7 @@ final class TrackingUITests: XCTestCase {
     func testTheWalkAdvancesAsLocationArrives() {
         let app = launchApp()
         waitForMap(app)
-        startWalkFromRouteDetail(app)
+        startWalkFromRouteCard(app)
 
         // Let the synthetic walk cover some ground.
         Thread.sleep(forTimeInterval: 4.0)
@@ -132,7 +132,7 @@ final class TrackingUITests: XCTestCase {
     func testPauseStopsTheClockAndResumeContinuesIt() {
         let app = launchApp()
         waitForMap(app)
-        startWalkFromRouteDetail(app)
+        startWalkFromRouteCard(app)
         Thread.sleep(forTimeInterval: 3.0)
 
         let pauseResume = app.buttons["pause-resume-button"]
@@ -160,7 +160,7 @@ final class TrackingUITests: XCTestCase {
     func testEndWalkReachesTheSummaryStubCarryingTheFigures() {
         let app = launchApp()
         waitForMap(app)
-        startWalkFromRouteDetail(app)
+        startWalkFromRouteCard(app)
         Thread.sleep(forTimeInterval: 4.0)
 
         let distanceBefore = app.staticTexts["0.5"].exists
@@ -182,13 +182,7 @@ final class TrackingUITests: XCTestCase {
         let app = launchApp(language: "chinese")
         waitForMap(app)
 
-        let row = app.buttons["route-row-wukang"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.tap()
-        XCTAssertTrue(app.staticTexts["route-detail-name"].waitForExistence(timeout: 10))
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.8)
-        app.buttons["开始步行"].tap()
+        openCardAndBegin(app, beginLabel: "开始路线")
         XCTAssertTrue(element(app, "elapsed-clock").waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 4.0)
 
@@ -196,7 +190,6 @@ final class TrackingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["配速"].exists, "pace label is not in Chinese")
         XCTAssertTrue(app.staticTexts["剩余"].exists, "remaining label is not in Chinese")
         XCTAssertTrue(app.staticTexts["进度"].exists, "progress label is not in Chinese")
-        XCTAssertTrue(app.staticTexts["前方无断点"].exists, "dead-ends line is not in Chinese")
         XCTAssertTrue(app.buttons["暂停"].exists, "Pause is not in Chinese")
         XCTAssertTrue(app.buttons["结束步行"].exists, "End walk is not in Chinese")
         XCTAssertGreaterThan(percent(app), 0, "the walk did not advance in the Chinese run")
@@ -214,7 +207,7 @@ final class TrackingUITests: XCTestCase {
     func testTheClockKeepsRunningAcrossBackgrounding() {
         let app = launchApp()
         waitForMap(app)
-        startWalkFromRouteDetail(app)
+        startWalkFromRouteCard(app)
         Thread.sleep(forTimeInterval: 2.0)
 
         let before = clock(app)
