@@ -123,6 +123,13 @@ final class SummaryAndBuilderUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["超过个人最佳"].exists)
         XCTAssertEqual(app.buttons["summary-done-button"].label, "完成")
         attachScreenshot(app, "42-walk-summary-zh")
+
+        // A walk started from REC has no route card to return to: Done lands
+        // on the Routes list.
+        app.buttons["summary-done-button"].tap()
+        XCTAssertTrue(anyElement(app, "routes-option-menu").waitForExistence(timeout: 10),
+                      "Done did not return to the route list")
+        XCTAssertFalse(anyElement(app, "route-card").exists, "a route card opened after a REC walk")
     }
 
     /// The photo picker is system UI, so this asserts it opens rather than
