@@ -26,8 +26,8 @@ struct RouteMapView: UIViewRepresentable {
     }
 
     /// Read only so that flipping light/dark re-runs `updateUIView`. MapKit
-    /// caches overlay renderers, so without something to invalidate on, a grade
-    /// and a casing chosen for one appearance would survive into the other.
+    /// caches overlay renderers, so without something to invalidate on, a
+    /// casing chosen for one appearance would survive into the other.
     @Environment(\.colorScheme) private var colorScheme
 
     let mode: Mode
@@ -73,7 +73,7 @@ struct RouteMapView: UIViewRepresentable {
         map.preferredConfiguration = configuration
 
         // The basemap follows the app's appearance explicitly rather than by
-        // inheritance, so the grade and the tiles under it can never disagree
+        // inheritance, so the casing and the tiles under it can never disagree
         // about which mode they are in.
         map.overrideUserInterfaceStyle = .unspecified
 
@@ -165,16 +165,6 @@ struct RouteMapView: UIViewRepresentable {
         map.removeOverlays(map.overlays)
         map.removeAnnotations(map.annotations)
 
-        // Grade the basemap towards the app's landscape by laying a sheet over
-        // it — added first, so everything below draws through it and everything
-        // after draws on top at full strength.
-        //
-        // This replaces an earlier attempt that put a SwiftUI `.saturation()`
-        // on the whole map view. That desaturated the route lines along with
-        // Apple's greens and blues, which defeated the point: the route is the
-        // one thing that must stay saturated.
-        map.addOverlay(BasemapGradeOverlay.make(), level: .aboveRoads)
-
         for route in routes {
             let coordinates = route.points.map(\.clLocationCoordinate)
             guard coordinates.count > 1 else { continue }
@@ -190,10 +180,8 @@ struct RouteMapView: UIViewRepresentable {
             line.role = .line
             line.routeId = route.id
 
-            // `.aboveLabels` rather than `.aboveRoads`: the grade sits at
-            // `.aboveRoads`, and MapKit only guarantees ordering *between*
-            // levels, not by insertion order within one. Putting the routes a
-            // level up is what keeps them from being faded by their own grade.
+            // `.aboveLabels` so the route draws over street names rather than
+            // under them.
             map.addOverlay(casing, level: .aboveLabels)
             map.addOverlay(line, level: .aboveLabels)
         }
@@ -239,7 +227,7 @@ struct RouteMapView: UIViewRepresentable {
     /// first one filled and the rest hollow, so the direction of travel is
     /// readable at a glance.
     private func redrawDraft(_ map: MKMapView) {
-        map.removeOverlays(map.overlays.filter { !($0 is BasemapGradeOverlay) })
+        map.removeOverlays(map.overlays)
         map.removeAnnotations(map.annotations)
 
         if draftPoints.count > 1 {
@@ -303,24 +291,6 @@ struct RouteMapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let wash = overlay as? BasemapGradeOverlay {
-                let renderer = MKPolygonRenderer(polygon: wash)
-                // In light mode the grade pulls Apple's basemap towards the
-                // app's own sage ground, so the map reads as landscape rather
-                // than as street-atlas grey and the route stays the most
-                // saturated thing on it. In dark mode it inverts: MapKit's dark
-                // map is already dim, so grading it lighter would flatten the
-                // green instead of lifting it. The sheet goes *darker* — and it
-                // is a near-black green rather than pure black, so the map does
-                // not fall out of the palette.
-                let isDark = mapView.traitCollection.userInterfaceStyle == .dark
-                renderer.fillColor = isDark
-                    ? UIColor(Theme.Map.gradeDark).withAlphaComponent(Theme.Map.gradeDarkAlpha)
-                    : UIColor(Theme.Map.gradeLight).withAlphaComponent(Theme.Map.gradeLightAlpha)
-                renderer.strokeColor = .clear
-                renderer.lineWidth = 0
-                return renderer
-            }
             guard let polyline = overlay as? RoutePolyline else {
                 return MKOverlayRenderer(overlay: overlay)
             }
@@ -328,20 +298,17 @@ struct RouteMapView: UIViewRepresentable {
             switch polyline.role {
             case .casing:
                 // The casing lifts the line off the map. On a dark basemap an
-                // ink casing is invisible, so it flips to a light one. Both were
-                // strengthened when the basemap went green: a green line on a
-                // green map needs more separation than a green line on grey.
+                // ink casing is invisible, so it flips to a light one.
                 let isDark = mapView.traitCollection.userInterfaceStyle == .dark
                 renderer.strokeColor = UIColor(isDark ? Theme.Map.casingDark : Theme.Map.casingLight)
                 renderer.lineWidth = Theme.Map.casingWidth
             case .line:
                 if parent.mode == .track {
                     // The route ahead of you: present, but plainly not yet
-                    // done. Mist green — a different step of the ramp from the
-                    // deep green behind you, not the same green faded, so the
-                    // two halves read as two states rather than as one line
-                    // with a rendering problem.
-                    renderer.strokeColor = UIColor(Theme.accentMuted)
+                    // done. Thinner, dashed and slightly faded against the
+                    // solid line behind you, so the two halves read as two
+                    // states.
+                    renderer.strokeColor = UIColor(Theme.accent)
                         .withAlphaComponent(Theme.Map.aheadAlpha)
                     renderer.lineWidth = Theme.Map.aheadWidth
                     renderer.lineDashPattern = Theme.Map.aheadDash
@@ -351,13 +318,12 @@ struct RouteMapView: UIViewRepresentable {
                     renderer.lineWidth = Theme.Map.lineWidth
                 }
             case .draft:
-                renderer.strokeColor = UIColor(Theme.accentStrong)
+                renderer.strokeColor = UIColor(Theme.accent)
                     .withAlphaComponent(Theme.Map.draftAlpha)
                 renderer.lineWidth = Theme.Map.draftWidth
                 renderer.lineDashPattern = Theme.Map.draftDash
             case .walked:
-                // The ground you have covered: solid, heavier, and the deep
-                // green at the front of the three layers.
+                // The ground you have covered: solid and heavier.
                 renderer.strokeColor = UIColor(Theme.accent)
                 renderer.lineWidth = Theme.Map.walkedWidth
             }
@@ -451,10 +417,9 @@ final class RoutePinView: MKAnnotationView {
         backgroundColor = .clear
 
         disc.frame = bounds
-        // Mist green in light, so the pin belongs to the landscape it sits on;
-        // raised forest in dark, so it reads *against* one. Either way it is
-        // never the page ground, which in dark mode is nearly the map.
-        disc.backgroundColor = UIColor(Theme.pinDisc)
+        // The card surface, ringed in accent, so the pin reads against the
+        // basemap in both appearances.
+        disc.backgroundColor = UIColor(Theme.surface)
         disc.layer.cornerRadius = 17
         disc.layer.borderWidth = Theme.Map.pinRingWidth
         disc.layer.borderColor = UIColor(Theme.accent).cgColor
@@ -483,29 +448,6 @@ final class RoutePinView: MKAnnotationView {
         accessibilityTraits = .button
         accessibilityLabel = routeName.isEmpty ? "\(number)" : routeName
         accessibilityIdentifier = "route-pin-\(number)"
-    }
-}
-
-// MARK: - Basemap grading
-
-/// The sheet that turns Apple's basemap into this app's landscape.
-///
-/// MapKit exposes no tile filter, so the grade is produced by drawing a
-/// translucent sheet across the map — beneath the routes and pins, which
-/// therefore keep their full green. The colour and direction flip with the
-/// appearance; see the renderer.
-final class BasemapGradeOverlay: MKPolygon {
-
-    /// The box is far larger than anything this app will ever show; it exists
-    /// only so the grade never runs out at the edge of a pan.
-    static func make() -> BasemapGradeOverlay {
-        let corners = [
-            CLLocationCoordinate2D(latitude: 10, longitude: 90),
-            CLLocationCoordinate2D(latitude: 55, longitude: 90),
-            CLLocationCoordinate2D(latitude: 55, longitude: 150),
-            CLLocationCoordinate2D(latitude: 10, longitude: 150),
-        ]
-        return BasemapGradeOverlay(coordinates: corners, count: corners.count)
     }
 }
 
@@ -549,7 +491,7 @@ final class WalkerView: MKAnnotationView {
         core.backgroundColor = UIColor(Theme.accent)
         core.layer.cornerRadius = 6
         core.layer.borderWidth = 2
-        core.layer.borderColor = UIColor(Theme.pinDisc).cgColor
+        core.layer.borderColor = UIColor(Theme.surface).cgColor
         core.isUserInteractionEnabled = false
         addSubview(core)
 
@@ -617,7 +559,7 @@ final class DraftPointView: MKAnnotationView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func configure(isFirst: Bool, index: Int) {
-        dot.backgroundColor = isFirst ? UIColor(Theme.accent) : UIColor(Theme.pinDisc)
+        dot.backgroundColor = isFirst ? UIColor(Theme.accent) : UIColor(Theme.surface)
         isAccessibilityElement = true
         accessibilityIdentifier = "draft-point-\(index)"
     }

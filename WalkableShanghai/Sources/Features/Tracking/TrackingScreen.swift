@@ -145,16 +145,16 @@ struct TrackingScreen: View {
                     .accessibilityIdentifier("progress-percent")
             }
 
-            // A capsule track with a gradient fill, per DESIGN.md §6. The old
+            // A capsule track with an accent fill, per DESIGN.md §6. The old
             // 3pt ruled bar belonged to the print system; this one says "how far
-            // along" with the same two greens the walked line uses.
+            // along" in the same green the walked line uses.
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Theme.fill)
                         .frame(height: 6)
                     Capsule()
-                        .fill(Theme.progressFill)
+                        .fill(Theme.accent)
                         .frame(width: geometry.size.width * session.progress, height: 6)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
@@ -171,15 +171,15 @@ struct TrackingScreen: View {
         HStack(spacing: Theme.Space.s2) {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 13))
-                .foregroundStyle(Theme.onAccentSoft)
+                .foregroundStyle(Theme.label)
             Text("track.deadEndsAhead".localized(language))
                 .font(Typography.meta)
-                .foregroundStyle(Theme.onAccentSoft)
+                .foregroundStyle(Theme.label)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Theme.Space.s3)
         .padding(.vertical, Theme.Space.s2)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.accentSoft, in: Theme.shape(Theme.Radius.sm))
+        .background(Theme.fill, in: Theme.shape(Theme.Radius.sm))
     }
 }

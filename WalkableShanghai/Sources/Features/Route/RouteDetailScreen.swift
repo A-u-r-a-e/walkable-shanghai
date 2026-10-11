@@ -106,10 +106,10 @@ struct RouteDetailScreen: View {
                         // A drawn route may carry none, one or two tags, so
                         // empty ones are dropped rather than shown as blanks.
                         if !route.tag1(language).isEmpty {
-                            TagChip(text: route.tag1(language), style: .outline)
+                            TagChip(text: route.tag1(language), style: .neutral)
                         }
                         if !route.tag2(language).isEmpty {
-                            TagChip(text: route.tag2(language), style: .accent)
+                            TagChip(text: route.tag2(language), style: .neutral)
                         }
                         TagChip(text: route.area(language), style: .neutral)
                     }
@@ -246,8 +246,7 @@ struct RouteDetailScreen: View {
             } label: {
                 actionFace(
                     system: isOffline ? "checkmark.circle" : "arrow.down.circle",
-                    title: (isOffline ? "route.offlineReady" : "route.download").localized(language),
-                    tinted: isOffline
+                    title: (isOffline ? "route.offlineReady" : "route.download").localized(language)
                 )
             }
             .buttonStyle(.plain)
@@ -257,7 +256,7 @@ struct RouteDetailScreen: View {
             // through seven phases. A control that does nothing is the kind of
             // thing a polish pass exists to find, so it is wired here.
             ShareLink(item: shareText(route: route, language: language)) {
-                actionFace(system: "square.and.arrow.up", title: "route.share".localized(language), tinted: false)
+                actionFace(system: "square.and.arrow.up", title: "route.share".localized(language))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("share-button")
@@ -283,24 +282,18 @@ struct RouteDetailScreen: View {
 
     private func figureText(_ value: Double) -> String { String(format: "%.1f", value) }
 
-    /// A quiet filled control. When the route is downloaded the fill turns soft
-    /// green — the state is carried by the fill as well as by the label, which
-    /// is what makes it readable at a glance.
-    private func actionFace(system: String, title: String, tinted: Bool) -> some View {
+    /// A quiet filled control on the neutral well. The label carries the
+    /// downloaded state.
+    private func actionFace(system: String, title: String) -> some View {
         HStack(spacing: Theme.Space.s1 + 2) {
             Image(systemName: system)
                 .font(.system(size: 15, weight: .medium))
             Text(title)
                 .font(Typography.meta.weight(.medium))
         }
-        .foregroundStyle(tinted ? Theme.onAccentSoft : Theme.label)
+        .foregroundStyle(Theme.label)
         .frame(maxWidth: .infinity, minHeight: 46)
-        // Both states are green; the tinted one is a step deeper, and the
-        // label is what actually reports the state.
-        .background(
-            tinted ? Theme.accentSoft : Theme.fill,
-            in: Theme.shape(Theme.Radius.md)
-        )
+        .background(Theme.fill, in: Theme.shape(Theme.Radius.md))
     }
 }
 

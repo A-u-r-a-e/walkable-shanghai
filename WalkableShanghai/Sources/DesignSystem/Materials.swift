@@ -71,34 +71,13 @@ extension View {
     /// An opaque card sitting on the page: figure grids, list groups, anything
     /// carrying long-form text. Never glass.
     ///
-    /// **Soft green, not a near-white panel.** This is the single biggest lever
-    /// on how green the app reads, because almost everything on almost every
-    /// screen is in a card. The research is what settles it: AllTrails and
-    /// Komoot both run warm, barely-tinted *page* grounds and get their green
-    /// from large soft-green surfaces sitting on them. A near-white card on a
-    /// cream ground is how the first attempt ended up looking grey.
-    ///
-    /// A `mist` border as well as a fill, because on a tinted ground the step
-    /// from ground to card is deliberately small, and dark mode draws no shadow
-    /// at all.
+    /// `surface` with a hairline `separator` border, because the step from
+    /// ground to card is small in both appearances and dark mode draws no
+    /// shadow at all.
     func card(radius: CGFloat = Theme.Radius.md) -> some View {
-        background(Theme.accentSoft, in: Theme.shape(radius))
-            .overlay { Theme.shape(radius).strokeBorder(Theme.mist, lineWidth: 1) }
+        background(Theme.surface, in: Theme.shape(radius))
+            .overlay { Theme.shape(radius).strokeBorder(Theme.separator, lineWidth: Theme.hairline) }
             .elevationSm()
-    }
-
-    /// Puts this screen under the canopy: two soft leaf glows at the top of the
-    /// view, over the app's ground.
-    ///
-    /// The signature device, and deliberately rationed — onboarding, featured,
-    /// the walk summary and the profile, and nowhere else. It is a *ground*, so
-    /// it takes no corner, no border and no shadow, and nothing is ever drawn in
-    /// the wash colour and elevated at the same time.
-    func canopyWash(height: CGFloat = 320) -> some View {
-        background(alignment: .top) {
-            CanopyWash(height: height)
-        }
-        .screenBackground()
     }
 
     /// Puts a screen on the app's ground.
@@ -111,58 +90,3 @@ extension View {
     }
 }
 
-
-// MARK: - The canopy wash
-
-/// Light through leaves: two overlapping radial glows, no hard edge anywhere.
-///
-/// Radial rather than linear because a linear ramp has a direction and a canopy
-/// does not — the eye reads a band as a header bar and a glow as light. The two
-/// stops are offset from each other so the overlap is off-centre, which is what
-/// keeps it from reading as a logo.
-///
-/// In light mode a wide mist glow carries a leaf glow inside it. In dark mode the
-/// same geometry runs the other way: two deep-green glows *lifting* the forest
-/// ground rather than washing it out, because a pale glow on a night ground
-/// would read as fog rather than as leaves.
-struct CanopyWash: View {
-    var height: CGFloat = 320
-
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        let isDark = colorScheme == .dark
-        ZStack(alignment: .top) {
-            // Colour and strength come from `Theme.Canopy`; this view owns
-            // only the geometry — two offset centres and their radii — because
-            // that is composition and not palette.
-            RadialGradient(
-                colors: [
-                    Theme.Canopy.back.opacity(
-                        isDark ? Theme.Canopy.backAlphaDark : Theme.Canopy.backAlphaLight
-                    ),
-                    .clear,
-                ],
-                center: UnitPoint(x: 0.18, y: 0.02),
-                startRadius: 0,
-                endRadius: height * 1.15
-            )
-            RadialGradient(
-                colors: [
-                    Theme.Canopy.front.opacity(
-                        isDark ? Theme.Canopy.frontAlphaDark : Theme.Canopy.frontAlphaLight
-                    ),
-                    .clear,
-                ],
-                center: UnitPoint(x: 0.86, y: 0.16),
-                startRadius: 0,
-                endRadius: height * 0.95
-            )
-        }
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
-        .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-}

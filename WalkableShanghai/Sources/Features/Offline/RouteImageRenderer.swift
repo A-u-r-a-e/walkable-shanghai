@@ -2,7 +2,7 @@ import UIKit
 import SwiftUI
 import CoreLocation
 
-/// Draws a route's line onto the app's green ground, as a picture.
+/// Draws a route's line onto the app's neutral well, as a picture.
 ///
 /// This is what makes offline honest without solving tile hosting. The line is
 /// the part of the map this app actually cares about, and it is already in our
@@ -43,11 +43,11 @@ enum RouteImageRenderer {
             let cg = context.cgContext
             let bounds = CGRect(origin: .zero, size: size)
 
-            // The stored picture stands in for the map, so it takes the map's
-            // landscape rather than the page's: a soft green field under the
-            // line. The ruled paper grid this used to carry was a print device
-            // and went with the rest of them.
-            cg.setFillColor(fixed(Theme.accentSoft).cgColor)
+            // The stored picture stands in for the map, so it takes the
+            // neutral well rather than the page: a plain field under the line.
+            // The ruled paper grid this used to carry was a print device and
+            // went with the rest of them.
+            cg.setFillColor(fixed(Theme.fill).cgColor)
             cg.fill(bounds)
 
             let points = project(coordinates, into: bounds.insetBy(dx: size.width * 0.12,

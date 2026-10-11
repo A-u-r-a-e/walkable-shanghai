@@ -23,20 +23,19 @@ struct DesignSystemGalleryView: View {
             VStack(alignment: .leading, spacing: Theme.Space.s8) {
 
                 section("gallery.tokens".localized(language)) {
-                    // The working greens and the grounds they sit on, in the
-                    // order DESIGN.md §2 lists them.
+                    // The neutral grounds, then the few roles that carry green.
                     VStack(spacing: Theme.Space.s2) {
                         HStack(spacing: Theme.Space.s2) {
                             swatch(Theme.bg, "bg")
                             swatch(Theme.surface, "surface")
                             swatch(Theme.fill, "fill")
-                            swatch(Theme.mist, "mist")
+                            swatch(Theme.separator, "separator")
                         }
                         HStack(spacing: Theme.Space.s2) {
-                            swatch(Theme.accentMuted, "mist green")
-                            swatch(Theme.accentStrong, "leaf")
-                            swatch(Theme.accent, "deep")
-                            swatch(Theme.sunlight, "sunlight")
+                            swatch(Theme.label, "label")
+                            swatch(Theme.accent, "accent")
+                            swatch(Theme.primaryFill, "primaryFill")
+                            swatch(Theme.featuredFill, "featuredFill")
                         }
                     }
                 }
@@ -63,10 +62,10 @@ struct DesignSystemGalleryView: View {
                 section("gallery.tags".localized(language)) {
                     VStack(alignment: .leading, spacing: Theme.Space.s3) {
                         HStack(spacing: Theme.Space.s2) {
-                            TagChip(text: "Plane trees", style: .outline)
-                            TagChip(text: "Morning", style: .accent)
+                            TagChip(text: "Plane trees", style: .neutral)
+                            TagChip(text: "Morning", style: .featured)
                             TagChip(text: "Xuhui", style: .neutral)
-                            TagChip(text: "Green", style: .accent, symbol: "leaf")
+                            TagChip(text: "Green", style: .neutral, symbol: "leaf")
                         }
                         HStack(spacing: Theme.Space.s3) {
                             AvatarInitial(initial: "沁", size: 34)
@@ -139,7 +138,7 @@ struct DesignSystemGalleryView: View {
                 .fill(color)
                 .frame(height: 44)
                 .overlay {
-                    Theme.shape(Theme.Radius.sm).strokeBorder(Theme.mist, lineWidth: 1)
+                    Theme.shape(Theme.Radius.sm).strokeBorder(Theme.separator, lineWidth: 1)
                 }
             Text(name)
                 .font(.system(size: 9))

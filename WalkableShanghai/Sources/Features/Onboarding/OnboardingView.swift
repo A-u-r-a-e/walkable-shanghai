@@ -99,20 +99,19 @@ struct OnboardingView: View {
             .padding(.bottom, Theme.Space.s2)
             .background(Theme.bg)
         }
-        .canopyWash()
+        .screenBackground()
     }
 
-    /// One of the three things every route promises. Green symbol tile, label
-    /// title, muted explanation.
+    /// One of the three things every route promises. Symbol tile, label title,
+    /// muted explanation.
     private func promise(symbol: String, title: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: Theme.Space.s3) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(Theme.accent)
                 .frame(width: 34, height: 34)
-                // The card under it is already the leaf tint, so the tile steps
-                // forward onto the raised surface instead of repeating it.
-                .background(Theme.surfaceRaised, in: Theme.shape(Theme.Radius.xs))
+                // A neutral well, so the tile reads against the white card.
+                .background(Theme.fill, in: Theme.shape(Theme.Radius.xs))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

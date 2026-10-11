@@ -33,7 +33,7 @@ struct ProfileScreen: View {
             // Clears the floating tab bar, which draws over the scroll view.
             .padding(.bottom, Theme.Space.s8 + 72)
         }
-        .canopyWash()
+        .screenBackground()
         .navigationTitle("tab.you".localized(language))
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $isShowingOnboarding) {
@@ -134,10 +134,9 @@ struct ProfileScreen: View {
 
     /// The chart, styled to the tokens rather than to Swift Charts' defaults.
     ///
-    /// Each bar is a vertical mist-to-leaf gradient capped by a deep-green rule
-    /// at its value: a bar that grows greener as it grows taller says "further"
-    /// without a second axis, which is the whole reason this screen has a chart
-    /// rather than a list. The baseline is a separator under the plot, and the
+    /// Each bar is a flat accent fill capped by a rule at its value, which is
+    /// the whole reason this screen has a chart rather than a list: the height
+    /// says "further" without a second axis. The baseline is a separator under the plot, and the
     /// whole thing sits on a card — so the rule that used to run across the page
     /// is now inside a group, like every other separator in the app.
     private func chart(months: [MonthlyBest], language: AppLanguage) -> some View {
@@ -151,7 +150,7 @@ struct ProfileScreen: View {
                         y: .value("km", month.longestKm),
                         width: .ratio(0.5)
                     )
-                    .foregroundStyle(Theme.barFill)
+                    .foregroundStyle(Theme.accent)
                     // Swift Charts' own corner rounding. A `clipShape` around
                     // the mark compiles and draws, but it costs the chart its
                     // accessibility element — the identifier below then lands on
@@ -159,7 +158,7 @@ struct ProfileScreen: View {
                     // chart at all.
                     .cornerRadius(Theme.Radius.xs, style: .continuous)
 
-                    // The deep-green top rule. A thin rectangle centred on the
+                    // The top rule. A thin rectangle centred on the
                     // value rather than a border on the bar, so the line reads
                     // as a measurement mark and the fill stays quiet under it.
                     if month.longestKm > 0 {

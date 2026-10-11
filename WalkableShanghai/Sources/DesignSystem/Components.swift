@@ -174,7 +174,7 @@ struct EmptyStateNote: View {
         VStack(spacing: Theme.Space.s2) {
             Image(systemName: "leaf")
                 .font(.system(size: 20, weight: .light))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(Theme.labelTertiary)
                 .accessibilityHidden(true)
             Text(text)
                 .font(Typography.secondary)
@@ -217,12 +217,12 @@ struct SegmentedRing<Value: Hashable>: View {
                 } label: {
                     Text(option.title)
                         .font(Typography.secondary.weight(isSelected ? .semibold : .regular))
-                        .foregroundStyle(isSelected ? Theme.onAccentFill : Theme.labelSecondary)
+                        .foregroundStyle(isSelected ? Theme.onPrimaryFill : Theme.labelSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Theme.Space.s2 + 1)
                         .background {
                             if isSelected {
-                                Capsule().fill(Theme.accentFill)
+                                Capsule().fill(Theme.primaryFill)
                             }
                         }
                         .contentShape(Capsule())
@@ -236,9 +236,8 @@ struct SegmentedRing<Value: Hashable>: View {
         // otherwise stretch to fill whatever it is placed in.
         .fixedSize(horizontal: false, vertical: true)
         .padding(3)
-        // The unselected track is soft green, not a grey well. Green real
-        // estate is what makes the app read as green — see DESIGN.md §1.
-        .background(Theme.accentSoft, in: Capsule())
+        // A neutral well; the selected segment carries the only colour.
+        .background(Theme.fill, in: Capsule())
     }
 }
 
@@ -246,7 +245,7 @@ struct SegmentedRing<Value: Hashable>: View {
 
 /// A tag on a route: its character, when to walk it, where it is.
 struct TagChip: View {
-    enum Style { case outline, accent, neutral }
+    enum Style { case featured, neutral }
 
     let text: String
     var style: Style = .neutral
@@ -269,25 +268,18 @@ struct TagChip: View {
         .padding(.vertical, Theme.Space.s1 + 1)
         .foregroundStyle(foreground)
         .background(background, in: Theme.shape(Theme.Radius.xs))
-        .overlay {
-            if style == .outline {
-                Theme.shape(Theme.Radius.xs).strokeBorder(Theme.accent, lineWidth: 1)
-            }
-        }
     }
 
     private var foreground: Color {
         switch style {
-        case .outline: return Theme.accent
-        case .accent: return Theme.onAccentSoft
-        case .neutral: return Theme.labelSecondary
+        case .featured: return Theme.onFeaturedFill
+        case .neutral: return Theme.label
         }
     }
 
     private var background: Color {
         switch style {
-        case .outline: return .clear
-        case .accent: return Theme.accentSoft
+        case .featured: return Theme.featuredFill
         case .neutral: return Theme.fill
         }
     }
@@ -296,8 +288,8 @@ struct TagChip: View {
 // MARK: - Avatar
 
 /// A walker, shown as the single character the design uses in place of a photo.
-/// A soft leaf disc with a deep-green ring for the signed-in walker or a
-/// curator, a plain well disc for everyone else.
+/// A well disc for everyone, with a hairline ring and full-strength ink for
+/// the signed-in walker or a curator.
 struct AvatarInitial: View {
     let initial: String
     var size: CGFloat = 32
@@ -306,11 +298,11 @@ struct AvatarInitial: View {
     var body: some View {
         Text(initial)
             .font(.system(size: size * 0.42, weight: .medium))
-            .foregroundStyle(emphasised ? Theme.onAccentSoft : Theme.labelSecondary)
+            .foregroundStyle(emphasised ? Theme.label : Theme.labelSecondary)
             .frame(width: size, height: size)
-            .background(emphasised ? Theme.accentSoft : Theme.fill, in: Circle())
+            .background(Theme.fill, in: Circle())
             .overlay {
-                if emphasised { Circle().strokeBorder(Theme.accent, lineWidth: 1) }
+                if emphasised { Circle().strokeBorder(Theme.separator, lineWidth: 1) }
             }
             .accessibilityHidden(true)
     }
@@ -322,30 +314,27 @@ struct AvatarInitial: View {
 ///
 /// The biggest departure from the old system, which forbade filled buttons
 /// outright. Apple's language does not, and a tinted filled button is what an
-/// iPhone reader expects the primary action to look like. Contrast for both
-/// modes is recorded in DESIGN.md §2 — `onAccentFill` clears AA on `accentFill`
-/// in light *and* dark, which is why the dark fill is the brighter g300 rather
-/// than the accent itself.
+/// iPhone reader expects the primary action to look like. `onPrimaryFill`
+/// clears AA on `primaryFill` in light *and* dark; `PaletteContrastTests`
+/// checks it.
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Typography.rowTitle)
-            .foregroundStyle(Theme.onAccentFill)
+            .foregroundStyle(Theme.onPrimaryFill)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 50)
-            .background(Theme.accentFill, in: Theme.shape(Theme.Radius.md))
+            .background(Theme.primaryFill, in: Theme.shape(Theme.Radius.md))
             .opacity(configuration.isPressed ? 0.82 : 1)
             .contentShape(Rectangle())
     }
 }
 
-/// A quiet button on the soft leaf fill. No border — Apple's secondary buttons
+/// A quiet button on the neutral well. No border — Apple's secondary buttons
 /// separate by fill, not by stroke.
 ///
-/// `accentSoft` rather than the neutral well: this is the second half of a pair
-/// of actions and belongs to the same family as the primary, one layer back.
-/// Its title stays `label`, not `onAccentSoft` — green text on a green ground is
-/// the one thing this theme must not do.
+/// Neutral rather than a pale green: green is kept for the primary action, so
+/// the second action of a pair reads as the lesser one.
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -353,7 +342,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .foregroundStyle(Theme.label)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 50)
-            .background(Theme.accentSoft, in: Theme.shape(Theme.Radius.md))
+            .background(Theme.fill, in: Theme.shape(Theme.Radius.md))
             .opacity(configuration.isPressed ? 0.75 : 1)
             .contentShape(Rectangle())
     }
@@ -372,7 +361,7 @@ extension ButtonStyle where Self == SecondaryButtonStyle {
 /// A back or dismiss button that sits *on* an opaque page rather than floating
 /// over a map.
 ///
-/// It is therefore opaque too: a soft-green disc, no stroke. The stroked
+/// It is therefore opaque too: a neutral well disc, no stroke. The stroked
 /// outline it replaces was the print system's — Apple's own circular bar buttons
 /// separate by fill. Anything floating over live content calls
 /// `.floatingSurface` instead; the two are deliberately different, and
@@ -381,7 +370,7 @@ struct CircularIconButton: View {
     let system: String
     var size: CGFloat = 36
     var glyphSize: CGFloat = 15
-    var tint: Color = Theme.onAccentSoft
+    var tint: Color = Theme.label
     let action: () -> Void
 
     var body: some View {
@@ -390,7 +379,7 @@ struct CircularIconButton: View {
                 .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: size, height: size)
-                .background(Theme.accentSoft, in: Circle())
+                .background(Theme.fill, in: Circle())
         }
         .buttonStyle(.plain)
     }

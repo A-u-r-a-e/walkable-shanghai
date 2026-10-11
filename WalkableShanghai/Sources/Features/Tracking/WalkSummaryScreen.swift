@@ -55,7 +55,7 @@ struct WalkSummaryScreen: View {
             .padding(.top, Theme.Space.s4)
             .padding(.bottom, Theme.Space.s8 + 72)
         }
-        .canopyWash()
+        .screenBackground()
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .onChange(of: photoItem) { _, item in

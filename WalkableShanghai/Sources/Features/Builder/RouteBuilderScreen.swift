@@ -95,18 +95,21 @@ struct RouteBuilderScreen: View {
                             chosenTags.insert(tag)
                         }
                     } label: {
-                        // Chosen tags take the tinted fill rather than an
-                        // outline: a filled chip is what "on" looks like in this
-                        // system, and the outline is reserved for a route's own
-                        // character tag on the detail screen.
+                        // Chosen tags take an accent ring: a selected state is
+                        // one of the few places green belongs.
                         TagChip(
                             text: tag.localizationKey.localized(language),
-                            style: chosenTags.contains(tag) ? .accent : .neutral,
+                            style: .neutral,
                             // The one tag whose meaning the theme can carry.
                             // Hidden from VoiceOver, so the chip still announces
                             // exactly the word it always did.
                             symbol: tag == .green ? "leaf" : nil
                         )
+                        .overlay {
+                            if chosenTags.contains(tag) {
+                                Theme.shape(Theme.Radius.xs).strokeBorder(Theme.accent, lineWidth: 1.5)
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("builder-tag-\(tag.rawValue)")
