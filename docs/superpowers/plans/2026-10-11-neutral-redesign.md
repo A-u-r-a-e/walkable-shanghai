@@ -271,16 +271,16 @@ struct MainTabView: View {
                 ProfileScreen()
             }
             .tabItem {
-                Label("tab.me".localized(language), systemImage: "person")
+                Label("tab.you".localized(language), systemImage: "person")
             }
-            .tag(Tab.me)
+            .tag(Tab.you)
         }
         .tint(Theme.accent)
     }
 }
 ```
 
-(`ProfileScreen` becomes `MeScreen` in Task 11.)
+(`ProfileScreen` becomes `MeScreen`, and the tab becomes Me, in Task 11.)
 
 In `Sources/Features/Profile/ProfileScreen.swift`, delete `var onOpenSaved` and the "Offline downloads" settings row that called it.
 
