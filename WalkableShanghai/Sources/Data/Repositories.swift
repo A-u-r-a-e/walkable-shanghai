@@ -112,6 +112,9 @@ final class RouteStore {
     @ObservationIgnored private var source: BundledDataSource?
     @ObservationIgnored private var bundledRoutes: [Route] = []
 
+    /// Who is walking what. Offline for now; see `RouteActivityProvider`.
+    @ObservationIgnored private(set) var activity: any RouteActivityProvider = OfflineActivityProvider(counts: [:])
+
     init(bundle: Bundle = .main) {
         do {
             let data = try SampleDataLoader.load(from: bundle)
@@ -119,6 +122,7 @@ final class RouteStore {
             self.source = source
             self.bundledRoutes = source.allRoutes()
             self.routes = bundledRoutes
+            self.activity = OfflineActivityProvider(counts: data.activity)
         } catch {
             self.loadFailure = String(describing: error)
         }

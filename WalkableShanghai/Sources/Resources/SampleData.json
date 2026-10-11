@@ -258,5 +258,38 @@
       "en": "Walking Shanghai since August 2026",
       "zh": "自 2026 年 8 月开始记录步行"
     }
+  },
+  "_activityNote": "Recent walk counts per route. Bundled until a server provides them; walking-now is never bundled.",
+  "activity": {
+    "wukang": {
+      "today": 3,
+      "week": 14,
+      "month": 52,
+      "allTime": 410
+    },
+    "creek": {
+      "today": 1,
+      "week": 9,
+      "month": 31,
+      "allTime": 260
+    },
+    "fuxing": {
+      "today": 0,
+      "week": 4,
+      "month": 22,
+      "allTime": 190
+    },
+    "bund": {
+      "today": 2,
+      "week": 11,
+      "month": 27,
+      "allTime": 330
+    },
+    "century": {
+      "today": 0,
+      "week": 0,
+      "month": 6,
+      "allTime": 75
+    }
   }
 }

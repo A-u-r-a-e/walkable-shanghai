@@ -54,4 +54,5 @@ struct UserProfileSeed: Codable, Hashable, Sendable {
 struct SampleData: Codable, Sendable {
     let routes: [Route]
     let profile: UserProfileSeed
+    let activity: [String: WalkCounts]
 }
