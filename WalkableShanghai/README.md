@@ -27,7 +27,7 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 
-# Test (80 unit + 53 UI). The UI half drives the simulator, so budget ~15 min.
+# Test (81 unit + 54 UI). The UI half drives the simulator, so budget ~15 min.
 xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
@@ -312,7 +312,7 @@ Three things follow:
 ## Running on both iOS versions
 
 The deployment target is iOS 18.0, and the suite is green on **iOS 18.6**
-(iPhone 16 Pro) as well as **iOS 26.5** (iPhone 17 Pro): 80 unit and 53 UI
+(iPhone 16 Pro) as well as **iOS 26.5** (iPhone 17 Pro): 81 unit and 54 UI
 tests on each, with no failures, on 2026-10-12.
 
 `name=iPhone 16 Pro` does not resolve on this machine (`xcodebuild` exits 70,
