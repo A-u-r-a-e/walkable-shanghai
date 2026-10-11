@@ -60,7 +60,7 @@ final class LanguageSwitchUITests: XCTestCase {
 
         XCTAssertTrue(
             app.staticTexts[chineseHeadline].waitForExistence(timeout: 5),
-            "tapping 中文 did not switch the headline"
+            "tapping 简体中文 did not switch the headline"
         )
         XCTAssertFalse(
             app.staticTexts[englishHeadline].exists,
@@ -77,24 +77,27 @@ final class LanguageSwitchUITests: XCTestCase {
 
         let mapTab = app.tabBars.buttons["地图"]
         XCTAssertTrue(mapTab.waitForExistence(timeout: 5), "expected Chinese tab titles")
-        XCTAssertTrue(app.tabBars.buttons["社区"].exists)
-        XCTAssertTrue(app.tabBars.buttons["收藏"].exists)
         XCTAssertTrue(app.tabBars.buttons["我"].exists)
+        XCTAssertFalse(app.tabBars.buttons["社区"].exists)
+        XCTAssertFalse(app.tabBars.buttons["收藏"].exists)
         capture(app, "03-tabshell-zh")
 
         // 4 — Switch back from the language switch's permanent home.
+        // The Me tab's language control is a menu: its options exist only
+        // once it is open.
         app.tabBars.buttons["我"].tap()
+        app.descendants(matching: .any).matching(identifier: "me-language-picker").firstMatch.tap()
         let englishOption = app.buttons["English"]
-        XCTAssertTrue(englishOption.waitForExistence(timeout: 5), "expected the language switch on the You tab")
+        XCTAssertTrue(englishOption.waitForExistence(timeout: 5), "expected the language menu on the Me tab")
         englishOption.tap()
 
         XCTAssertTrue(
             app.tabBars.buttons["Map"].waitForExistence(timeout: 5),
             "switching back to English did not update the tab bar"
         )
-        XCTAssertTrue(app.tabBars.buttons["Community"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Saved"].exists)
         XCTAssertTrue(app.tabBars.buttons["Me"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Community"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Saved"].exists)
         capture(app, "04-tabshell-en")
 
         // 5 — The map screen, which is where the bundled catalogue first shows
@@ -169,6 +172,7 @@ final class LanguageSwitchUITests: XCTestCase {
         capture(app, "06-design-system-en")
 
         app.buttons["Done"].tap()
+        app.descendants(matching: .any).matching(identifier: "me-language-picker").firstMatch.tap()
         app.buttons["简体中文"].tap()
         app.buttons["设计系统"].tap()
         XCTAssertTrue(app.navigationBars["设计系统"].waitForExistence(timeout: 5))

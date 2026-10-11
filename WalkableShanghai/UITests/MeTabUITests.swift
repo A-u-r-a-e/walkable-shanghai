@@ -49,7 +49,7 @@ final class MeTabUITests: XCTestCase {
             XCTAssertTrue(anyElement(app, "download-row-\(id)").waitForExistence(timeout: 5), id)
         }
         anyElement(app, "remove-all-downloads").tap()
-        app.sheets.buttons["Remove all downloads"].firstMatch.tap()
+        anyElement(app, "remove-all-downloads-confirm").tap()
         XCTAssertTrue(anyElement(app, "downloads-empty").waitForExistence(timeout: 3))
 
         app.tabBars.buttons["Map"].tap()
@@ -64,7 +64,7 @@ final class MeTabUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Find a route near me"].waitForExistence(timeout: 5))
     }
 
-    func testTheYouTabReadsInChinese() {
+    func testTheMeTabReadsInChinese() {
         let app = launchWalkable(language: "chinese")
         openMe(app, title: "我")
         XCTAssertTrue(app.staticTexts["已下载路线"].exists)

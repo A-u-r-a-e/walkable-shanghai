@@ -37,6 +37,9 @@ struct MeScreen: View {
                     }
                 }
                 .pickerStyle(.menu)
+                // A menu picker draws its value in the tint, and green belongs
+                // to selected states and primary actions, not to a setting's value.
+                .tint(Theme.labelSecondary)
                 .accessibilityIdentifier("me-language-picker")
             }
 
@@ -63,15 +66,19 @@ struct MeScreen: View {
             }
 
             Section("me.section.about".localized(language)) {
-                Button("me.howItWorks".localized(language)) { isShowingOnboarding = true }
-                    .foregroundStyle(Theme.label)
-                    .accessibilityIdentifier("me-how-it-works-row")
+                Button { isShowingOnboarding = true } label: {
+                    chevronRow("me.howItWorks".localized(language))
+                }
+                .foregroundStyle(Theme.label)
+                .accessibilityIdentifier("me-how-it-works-row")
                 LabeledContent("me.version".localized(language), value: Self.version)
                     .accessibilityIdentifier("me-version-row")
                 #if DEBUG
-                Button("settings.designSystem".localized(language)) { isShowingDesignSystem = true }
-                    .foregroundStyle(Theme.label)
-                    .accessibilityIdentifier("me-design-system-row")
+                Button { isShowingDesignSystem = true } label: {
+                    chevronRow("settings.designSystem".localized(language))
+                }
+                .foregroundStyle(Theme.label)
+                .accessibilityIdentifier("me-design-system-row")
                 #endif
             }
         }
@@ -103,6 +110,20 @@ struct MeScreen: View {
             }
         }
         .padding(.vertical, Theme.Space.s1)
+    }
+
+    /// A row that presents rather than pushes, drawn like a NavigationLink row
+    /// so every row that opens something reads the same. The chevron is
+    /// decoration: VoiceOver already announces the row as a button.
+    private func chevronRow(_ title: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer(minLength: Theme.Space.s2)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.labelTertiary)
+                .accessibilityHidden(true)
+        }
     }
 
     private static var version: String {

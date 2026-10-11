@@ -104,9 +104,10 @@ struct WalkableShanghaiApp: App {
 /// again.
 enum Appearance {
     static func apply() {
-        // The one thing worth overriding: selected bar items take the app's
-        // green rather than the system blue.
+        // Selected tab items take the app's green rather than the system blue.
+        // Navigation bar buttons stay neutral: a back button is chrome, not a
+        // selected state or a primary action.
         UITabBar.appearance().tintColor = UIColor(Theme.accent)
-        UINavigationBar.appearance().tintColor = UIColor(Theme.accent)
+        UINavigationBar.appearance().tintColor = UIColor(Theme.label)
     }
 }

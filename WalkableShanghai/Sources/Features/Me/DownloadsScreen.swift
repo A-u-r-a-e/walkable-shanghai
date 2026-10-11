@@ -51,7 +51,9 @@ struct DownloadsScreen: View {
             Button("me.downloads.removeAll".localized(language), role: .destructive) {
                 saved.removeAllDownloads()
             }
+            .accessibilityIdentifier("remove-all-downloads-confirm")
             Button("action.cancel".localized(language), role: .cancel) {}
+                .accessibilityIdentifier("remove-all-downloads-cancel")
         } message: {
             Text("me.downloads.confirm".localized(language))
         }
