@@ -37,7 +37,6 @@ struct SeparatorColumn: View {
 struct Figure: View {
     let value: String
     let label: String
-    var emphasised: Bool = false
     var textStyle: Font.TextStyle = .title
     /// Optional identifier for tests that need to read a figure back.
     var identifier: String?
@@ -67,7 +66,7 @@ struct Figure: View {
 /// A card, not a ruled band. The figures sit on `surface` with separators
 /// between the cells rather than hairlines drawn across the page.
 struct FigureStrip: View {
-    let figures: [(value: String, label: String, emphasised: Bool)]
+    let figures: [(value: String, label: String)]
     /// Optional per-figure identifiers, in the same order as `figures`.
     var identifiers: [String] = []
 
@@ -77,7 +76,6 @@ struct FigureStrip: View {
                 Figure(
                     value: figure.value,
                     label: figure.label,
-                    emphasised: figure.emphasised,
                     identifier: index < identifiers.count ? identifiers[index] : nil
                 )
                 if index < figures.count - 1 {
@@ -99,14 +97,11 @@ struct FigureStrip: View {
 /// width, with separators inside the card rather than rules on the page.
 struct FigureGrid: View {
 
-    /// One cell. A struct rather than a tuple because two call sites want
-    /// different parts of it — the profile names its figures for the tests, the
-    /// walk summary emphasises one of them — and a defaulted struct says that
-    /// without either site carrying the other's argument.
+    /// One cell. A struct rather than a tuple so the profile can name its
+    /// figures for the tests while the walk summary leaves the identifier out.
     struct Item {
         let value: String
         let label: String
-        var emphasised: Bool = false
         var identifier: String?
     }
 
@@ -128,7 +123,6 @@ struct FigureGrid: View {
                         Figure(
                             value: figure.value,
                             label: figure.label,
-                            emphasised: figure.emphasised,
                             textStyle: textStyle,
                             identifier: figure.identifier
                         )
@@ -281,6 +275,50 @@ struct TagChip: View {
         switch style {
         case .featured: return Theme.featuredFill
         case .neutral: return Theme.fill
+        }
+    }
+}
+
+// MARK: - Flow layout
+
+/// Wraps its children onto the next line when they run out of room.
+///
+/// The three route tags are free text in two languages, so their combined width
+/// is not predictable — an `HStack` would either clip them or force them to
+/// shrink. This is the smallest thing that lets them wrap honestly.
+struct FlowRow: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > maxWidth {
+                x = 0
+                y += lineHeight + spacing
+                lineHeight = 0
+            }
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+        return CGSize(width: maxWidth == .infinity ? x : maxWidth, height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += lineHeight + spacing
+                lineHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
         }
     }
 }

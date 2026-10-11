@@ -3,8 +3,10 @@ import SwiftUI
 /// The map tab, and the app's home.
 ///
 /// A full-bleed map with a pin per listed route, a search field and the
-/// map-style button across the top, a record button, and a two-height sheet
-/// that lists routes the way the walker chose in its Routes dropdown.
+/// map-style button across the top, a record button, and a two-height sheet.
+/// The sheet shows either the route list, ordered the way the walker chose in
+/// its Routes dropdown, or one route's card. While a card is open the map
+/// draws only that route, framed, without pins.
 ///
 /// The sheet is built by hand rather than with `.presentationDetents`, for two
 /// reasons a system sheet cannot satisfy: the record button has to track the
@@ -18,14 +20,6 @@ struct MapDiscoverScreen: View {
 
     private enum Detent {
         case peek, full
-        /// Heights from the source design, clamped so they still work on a
-        /// small phone and at large text sizes.
-        func height(in available: CGFloat) -> CGFloat {
-            switch self {
-            case .peek: return min(300, available * 0.42)
-            case .full: return min(540, available * 0.74)
-            }
-        }
     }
 
     @State private var query = RouteListQuery()
@@ -34,6 +28,11 @@ struct MapDiscoverScreen: View {
     @State private var detent: Detent = .peek
     @State private var dragTranslation: CGFloat = 0
     @State private var selectedRouteId: String?
+    @State private var cardHeight: CGFloat = 0
+    /// The route whose card has reported its height. The map waits for it
+    /// before drawing that route alone, so the frame clears the card's real
+    /// height rather than the zero it starts at.
+    @State private var measuredRouteId: String?
     @State private var trackingRoute: Route?
 
     var body: some View {
@@ -42,15 +41,16 @@ struct MapDiscoverScreen: View {
         GeometryReader { geometry in
             let available = geometry.size.height
             let sheetHeight = resolvedSheetHeight(in: available)
+            let framedRoute = selectedRouteId == measuredRouteId ? selectedRouteId.flatMap(store.route(id:)) : nil
 
             ZStack(alignment: .top) {
                 RouteMapView(
-                    mode: .discover,
-                    routes: listedRoutes,
+                    mode: framedRoute == nil ? .discover : .detail,
+                    routes: framedRoute.map { [$0] } ?? listedRoutes,
                     style: settings.mapStyle,
-                    bottomInset: Detent.peek.height(in: available),
+                    bottomInset: sheetHeight,
                     topInset: 76,
-                    onSelectRoute: { selectedRouteId = $0 }
+                    onSelectRoute: { showCard($0) }
                 )
                 .ignoresSafeArea(edges: .bottom)
 
@@ -71,9 +71,6 @@ struct MapDiscoverScreen: View {
         .onAppear { origin = NearbyOrigin.current() }
         .fullScreenCover(isPresented: $isShowingBuilder) {
             NavigationStack { RouteBuilderScreen() }
-        }
-        .navigationDestination(item: $selectedRouteId) { routeId in
-            RouteDetailScreen(routeId: routeId)
         }
         .navigationDestination(item: $trackingRoute) { route in
             TrackingScreen(route: route) { trackingRoute = nil }
@@ -184,12 +181,42 @@ struct MapDiscoverScreen: View {
             VStack(spacing: 0) {
                 grabHandle(available: available)
 
-                RouteListSheet(
-                    query: $query,
-                    sections: sections,
-                    onSelect: { selectedRouteId = $0 },
-                    onNewRoute: { isShowingBuilder = true }
-                )
+                if let route = selectedRouteId.flatMap(store.route(id:)) {
+                    // At the largest text sizes the card outgrows the sheet's
+                    // cap, and then it scrolls. Measured inside the scroll view,
+                    // so the height reported is the card's own, not the sheet's.
+                    ScrollView {
+                        RouteCard(
+                            route: route,
+                            isExpanded: detent == .full,
+                            isSaved: saved.isSaved(route.id),
+                            walkingNow: store.activity.walkingNow(routeId: route.id),
+                            onToggleSaved: { saved.toggleSaved(route) },
+                            onClose: {
+                                withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                                    selectedRouteId = nil
+                                    detent = .peek
+                                }
+                            },
+                            onBegin: { trackingRoute = route }
+                        )
+                        // The tab bar draws over the sheet, as it does over the
+                        // list; the same clearance keeps Begin route out from under it.
+                        .padding(.bottom, Self.tabBarClearance)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                            cardHeight = $0
+                            measuredRouteId = route.id
+                        }
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                } else {
+                    RouteListSheet(
+                        query: $query,
+                        sections: sections,
+                        onSelect: { showCard($0) },
+                        onNewRoute: { isShowingBuilder = true }
+                    )
+                }
             }
             .frame(height: height)
             .frame(maxWidth: .infinity)
@@ -235,8 +262,8 @@ struct MapDiscoverScreen: View {
                 .onEnded { value in
                     // Decide on where the drag was heading, not just where it
                     // stopped — a fast flick should complete.
-                    let projected = detent.height(in: available) - value.predictedEndTranslation.height
-                    let midpoint = (Detent.peek.height(in: available) + Detent.full.height(in: available)) / 2
+                    let projected = height(of: detent, in: available) - value.predictedEndTranslation.height
+                    let midpoint = (height(of: .peek, in: available) + height(of: .full, in: available)) / 2
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                         detent = projected > midpoint ? .full : .peek
                         dragTranslation = 0
@@ -245,12 +272,39 @@ struct MapDiscoverScreen: View {
         )
     }
 
+    /// Space the floating tab bar takes at the foot of the sheet. Matches the
+    /// list's bottom padding.
+    private static let tabBarClearance = Theme.Space.s8 + 56
+
+    /// The list keeps its two heights. The card's collapsed height fits the
+    /// title row and figures above the tab bar; expanded, it fits the card's
+    /// measured content, capped at the list's full height.
+    private func height(of detent: Detent, in available: CGFloat) -> CGFloat {
+        let fullCap = min(560, available * 0.78)
+        let collapsedCard = 136 + Self.tabBarClearance
+        switch (detent, selectedRouteId != nil) {
+        case (.peek, false): return min(300, available * 0.42)
+        case (.full, false): return min(540, available * 0.74)
+        case (.peek, true): return collapsedCard
+        case (.full, true): return min(fullCap, max(collapsedCard, cardHeight + 28))
+        }
+    }
+
     private func resolvedSheetHeight(in available: CGFloat) -> CGFloat {
-        let base = detent.height(in: available)
-        let minimum = Detent.peek.height(in: available)
-        let maximum = Detent.full.height(in: available)
+        let base = height(of: detent, in: available)
+        let minimum = height(of: .peek, in: available)
+        let maximum = height(of: .full, in: available)
         // Dragging up is a negative translation, which should grow the sheet.
         return min(maximum, max(minimum, base - dragTranslation))
+    }
+
+    /// Opens a route's card from its row or its pin, with the sheet raised so
+    /// the whole card shows.
+    private func showCard(_ routeId: String) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+            selectedRouteId = routeId
+            detent = .full
+        }
     }
 }
 

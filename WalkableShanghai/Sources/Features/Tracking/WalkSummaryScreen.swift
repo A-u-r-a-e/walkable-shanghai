@@ -85,8 +85,7 @@ struct WalkSummaryScreen: View {
                 .init(value: session.paceText,
                       label: "summary.minPerKm".localized(language)),
                 .init(value: overBestText,
-                      label: "summary.overBest".localized(language),
-                      emphasised: isPersonalBest),
+                      label: "summary.overBest".localized(language)),
             ],
             textStyle: .title
         )
@@ -102,11 +101,6 @@ struct WalkSummaryScreen: View {
         guard let delta = walks.metersOverBest(session.distanceMeters) else { return "—" }
         let km = delta / 1000
         return String(format: "%@%.1f", km >= 0 ? "+" : "−", abs(km))
-    }
-
-    private var isPersonalBest: Bool {
-        guard let delta = walks.metersOverBest(session.distanceMeters) else { return false }
-        return delta > 0
     }
 
     private func dateLine(language: AppLanguage) -> String {

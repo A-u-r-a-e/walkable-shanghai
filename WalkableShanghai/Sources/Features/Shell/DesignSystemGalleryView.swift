@@ -42,8 +42,8 @@ struct DesignSystemGalleryView: View {
 
                 section("gallery.figures".localized(language)) {
                     FigureStrip(figures: [
-                        ("3.4", "unit.km".localized(language), false),
-                        ("52", "unit.min".localized(language), false),
+                        ("3.4", "unit.km".localized(language)),
+                        ("52", "unit.min".localized(language)),
                     ])
                 }
 

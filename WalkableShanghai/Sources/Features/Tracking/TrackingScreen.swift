@@ -99,9 +99,9 @@ struct TrackingScreen: View {
                 .accessibilityValue(session.elapsedText)
 
             FigureStrip(figures: [
-                (session.distanceText, "unit.km".localized(language), false),
-                (session.paceText, "track.pace".localized(language), false),
-                (session.remainingText, "track.remaining".localized(language), false),
+                (session.distanceText, "unit.km".localized(language)),
+                (session.paceText, "track.pace".localized(language)),
+                (session.remainingText, "track.remaining".localized(language)),
             ])
 
             progressBar(language: language)

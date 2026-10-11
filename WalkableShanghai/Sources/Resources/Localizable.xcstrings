@@ -19,6 +19,23 @@
         }
       }
     },
+    "action.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
     "builder.instruction": {
       "extractionState": "manual",
       "localizations": {
@@ -912,20 +929,19 @@
         }
       }
     },
-    "route.missing": {
-      "comment": "Shown only if a route id outlives its route, which would be a catalogue bug.",
+    "route.begin": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No route with the id %@"
+            "value": "Begin route"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "找不到该路线：%@"
+            "value": "开始路线"
           }
         }
       }
@@ -996,23 +1012,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ —— %2$@ 公里，%3$@ 分钟。来自 Walkable Shanghai。"
-          }
-        }
-      }
-    },
-    "route.startWalking": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start walking"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始步行"
           }
         }
       }
