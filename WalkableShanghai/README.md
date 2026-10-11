@@ -27,7 +27,7 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 
-# Test (80 unit + 53 UI). The UI half drives the simulator, so budget ~15 min.
+# Test (81 unit + 54 UI). The UI half drives the simulator, so budget ~15 min.
 xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
