@@ -63,22 +63,30 @@ final class SavedRoutesStore {
         setSaved(!isSaved(route.id), route: route)
     }
 
-    /// Builds the download for any saved route that lacks one — the seeded
-    /// routes on first launch, or routes saved before saving meant downloading.
+    /// Makes the downloads match the saved routes, in both directions. It
+    /// builds the download for any saved route that lacks one — the seeded
+    /// routes on first launch, or routes saved before saving meant downloading
+    /// — and deletes any download whose route is not saved, which an earlier
+    /// version could leave behind when downloading was a separate choice.
     func ensureDownloads(routes: [Route]) {
         for route in routes where isSaved(route.id) && !offline.hasBundle(route.id) {
             offline.download(route: route)
         }
+        for routeId in offline.bundles.map(\.routeId) where !isSaved(routeId) {
+            offline.remove(routeId: routeId)
+        }
     }
 
-    /// Frees every download. Because saved and downloaded are one state, this
-    /// also clears the bookmarks.
+    /// Frees every download, including any whose route is not saved. Because
+    /// saved and downloaded are one state, this also clears the bookmarks.
     func removeAllDownloads() {
         for row in allRows() where row.isSaved {
             row.isSaved = false
-            offline.remove(routeId: row.routeId)
         }
         persist()
+        for routeId in offline.bundles.map(\.routeId) {
+            offline.remove(routeId: routeId)
+        }
         reload()
     }
 
@@ -105,7 +113,7 @@ final class SavedRoutesStore {
         (try? context.fetch(FetchDescriptor<RouteUserState>())) ?? []
     }
 
-    /// Rebuilds the in-memory sets from the store, so what the UI reads is
+    /// Rebuilds the in-memory set from the store, so what the UI reads is
     /// always what was actually written.
     private func reload() {
         let rows = allRows()

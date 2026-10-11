@@ -912,24 +912,6 @@
         }
       }
     },
-    "route.download": {
-      "comment": "Offline toggle, not yet downloaded.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下载"
-          }
-        }
-      }
-    },
     "route.missing": {
       "comment": "Shown only if a route id outlives its route, which would be a catalogue bug.",
       "extractionState": "manual",
@@ -944,24 +926,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "找不到该路线：%@"
-          }
-        }
-      }
-    },
-    "route.offlineReady": {
-      "comment": "Offline toggle, already flagged for offline.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Offline ready"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "离线可用"
           }
         }
       }

@@ -89,10 +89,28 @@ final class UserStateTests: XCTestCase {
         let saved = SavedRoutesStore(container: container, offline: offline, resetToSeed: true)
         saved.ensureDownloads(routes: RouteStore().routes)
         XCTAssertFalse(offline.bundles.isEmpty)
+        // A download left over from when downloading was separate from saving.
+        offline.download(route: route("fuxing"))
+        XCTAssertFalse(saved.isSaved("fuxing"))
 
         saved.removeAllDownloads()
         XCTAssertTrue(offline.bundles.isEmpty)
+        XCTAssertFalse(offline.hasBundle("fuxing"))
         XCTAssertEqual(saved.savedCount, 0)
+    }
+
+    func testEnsureDownloadsDeletesDownloadsOfUnsavedRoutes() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let offline = OfflineStore(container: container)
+        let saved = SavedRoutesStore(container: container, offline: offline, resetToSeed: true)
+        // fuxing is not saved, but an earlier version could have downloaded it.
+        XCTAssertFalse(saved.isSaved("fuxing"))
+        offline.download(route: route("fuxing"))
+        XCTAssertTrue(offline.hasBundle("fuxing"))
+
+        saved.ensureDownloads(routes: RouteStore().routes)
+        XCTAssertFalse(offline.hasBundle("fuxing"))
+        XCTAssertEqual(Set(offline.bundles.map(\.routeId)), saved.savedRouteIds)
     }
 
     func testEnsureDownloadsBacksEverySavedRoute() throws {
