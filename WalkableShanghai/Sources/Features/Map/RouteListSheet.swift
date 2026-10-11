@@ -59,6 +59,9 @@ struct RouteListSheet: View {
                 HStack(spacing: Theme.Space.s1) {
                     Text(query.option.localizationKey.localized(language))
                         .font(Typography.secondary.weight(.semibold))
+                        // iOS 18 offers a menu label less than its own width
+                        // and cut "Nearby" to "Near…".
+                        .fixedSize()
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.semibold))
                 }

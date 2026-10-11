@@ -73,6 +73,15 @@ final class ProfileUITests: XCTestCase {
         revealRow(app, "wukang").tap()
         let begin = element(app, "start-walking-button")
         XCTAssertTrue(begin.waitForExistence(timeout: 10), "the route card has no Begin route")
+        // At the largest text size the card scrolls. XCUITest's own scroll
+        // stops once the button enters the scroll view, which on iOS 18 is
+        // still under the opaque tab bar, so the tap would land on the bar.
+        let card = app.scrollViews.containing(.any, identifier: "route-card").firstMatch
+        for _ in 0..<6 where !begin.isHittable {
+            card.swipeUp()
+            Thread.sleep(forTimeInterval: 0.6)
+        }
+        XCTAssertTrue(begin.isHittable, "Begin route is not reachable")
         begin.tap()
         XCTAssertTrue(element(app, "elapsed-clock").waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 5.0)

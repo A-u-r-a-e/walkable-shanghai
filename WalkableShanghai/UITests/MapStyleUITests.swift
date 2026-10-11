@@ -9,10 +9,18 @@ final class MapStyleUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// "Map" is also the first tab's title, and on iOS 18 `app.buttons["Map"]`
+    /// finds the tab first. So take the match that is not in the tab bar.
     private func chooseStyle(_ app: XCUIApplication, _ title: String) {
         anyElement(app, "map-style-button").tap()
-        let item = app.buttons[title].firstMatch
-        XCTAssertTrue(item.waitForExistence(timeout: 3), "style \(title) missing")
+        let tabBar = app.tabBars.firstMatch
+        var item: XCUIElement?
+        for _ in 0..<6 where item == nil {
+            item = app.buttons.matching(NSPredicate(format: "label == %@", title)).allElementsBoundByIndex
+                .first { !(tabBar.exists && tabBar.frame.intersects($0.frame)) }
+            if item == nil { Thread.sleep(forTimeInterval: 0.5) }
+        }
+        guard let item else { return XCTFail("style \(title) missing") }
         item.tap()
     }
 
