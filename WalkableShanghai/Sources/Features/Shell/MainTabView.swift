@@ -8,7 +8,7 @@ struct MainTabView: View {
 
     @Environment(AppSettings.self) private var settings
 
-    enum Tab: Hashable { case map, you }
+    enum Tab: Hashable { case map, me }
 
     @Binding var selection: Tab
 
@@ -25,12 +25,12 @@ struct MainTabView: View {
             .tag(Tab.map)
 
             NavigationStack {
-                ProfileScreen()
+                MeScreen()
             }
             .tabItem {
-                Label("tab.you".localized(language), systemImage: "person")
+                Label("tab.me".localized(language), systemImage: "person")
             }
-            .tag(Tab.you)
+            .tag(Tab.me)
         }
         .tint(Theme.accent)
     }

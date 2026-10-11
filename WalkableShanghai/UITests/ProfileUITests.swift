@@ -1,9 +1,10 @@
 import XCTest
 
 /// Phase 8's acceptance tests: the profile's figures are computed, the chart is
-/// real, the settings rows go where they say, the language switch reaches
+/// real, the profile opens from the Me list, the language switch reaches
 /// everything including the month labels, and the polish holds up — icon-only
 /// controls are announced and the screen survives the largest text size.
+@MainActor
 final class ProfileUITests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -46,13 +47,20 @@ final class ProfileUITests: XCTestCase {
     }
 
     private func waitForMap(_ app: XCUIApplication) {
-        XCTAssertTrue(app.staticTexts["routes-in-view-count"].waitForExistence(timeout: 15),
+        XCTAssertTrue(element(app, "routes-option-menu").waitForExistence(timeout: 15),
                       "the map screen never appeared")
         Thread.sleep(forTimeInterval: 1.5)
     }
 
-    private func openProfile(_ app: XCUIApplication, tabLabel: String = "You") {
+    private func openProfile(_ app: XCUIApplication, tabLabel: String = "Me") {
         app.tabBars.buttons[tabLabel].tap()
+        // The Me tab keeps its navigation stack, so the profile may already be
+        // open from an earlier visit.
+        if !element(app, "profile-walk-count").exists {
+            XCTAssertTrue(element(app, "me-profile-row").waitForExistence(timeout: 10),
+                          "the Me list never appeared")
+            element(app, "me-profile-row").tap()
+        }
         XCTAssertTrue(element(app, "profile-walk-count").waitForExistence(timeout: 10),
                       "the profile never appeared")
         Thread.sleep(forTimeInterval: 1.0)
@@ -101,7 +109,10 @@ final class ProfileUITests: XCTestCase {
     }
 
     private func drawARoute(_ app: XCUIApplication, named name: String) {
-        element(app, "profile-draw-route-row").tap()
+        app.tabBars.buttons["Map"].tap()
+        waitForMap(app)
+        chooseRoutesOption(app, "Mine")
+        element(app, "new-route-button").tap()
         let map = element(app, "builder-map")
         XCTAssertTrue(map.waitForExistence(timeout: 10))
         for offset in [(0.30, 0.35), (0.45, 0.45), (0.60, 0.40), (0.70, 0.55)] {
@@ -112,9 +123,7 @@ final class ProfileUITests: XCTestCase {
         field.tap()
         field.typeText(name)
         app.buttons["builder-save-button"].tap()
-        XCTAssertTrue(element(app, "profile-walk-count").waitForExistence(timeout: 10),
-                      "saving the route did not return to the profile")
-        Thread.sleep(forTimeInterval: 1.0)
+        waitForMap(app)
     }
 
     // MARK: - The figures are computed, not hardcoded
@@ -158,12 +167,11 @@ final class ProfileUITests: XCTestCase {
 
         // Drawing a route moves a different figure, and only that one.
         drawARoute(app, named: "Evening loop")
+        openProfile(app)
         XCTAssertEqual(element(app, "profile-routes-added").value as? String, "1",
                        "the drawn route did not reach the profile")
         XCTAssertEqual(element(app, "profile-walk-count").value as? String, "1",
                        "drawing a route should not change the walk count")
-        // The settings row carries the same count as the figure above it.
-        XCTAssertEqual(element(app, "profile-draw-route-row").value as? String, "1")
         capture(app, "71-profile-with-stats-en")
     }
 
@@ -195,50 +203,18 @@ final class ProfileUITests: XCTestCase {
         XCTAssertEqual(element(relaunched, "profile-total-km").value as? String, walked)
     }
 
-    // MARK: - Settings
-
-    func testTheThreeSettingsRowsGoWhereTheySay() {
-        let app = launchApp()
-        waitForMap(app)
-        openProfile(app)
-
-        // Routes you added → the builder.
-        element(app, "profile-draw-route-row").tap()
-        XCTAssertTrue(element(app, "builder-map").waitForExistence(timeout: 10),
-                      "Routes you added did not open the builder")
-        element(app, "builder-back-button").tap()
-        Thread.sleep(forTimeInterval: 1.0)
-
-        // Offline downloads → the Saved tab, with its real count on the row.
-        openProfile(app)
-        XCTAssertEqual(element(app, "profile-offline-row").value as? String, "2",
-                       "the row does not carry the real number of downloads")
-        element(app, "profile-offline-row").tap()
-        XCTAssertTrue(element(app, "saved-count").waitForExistence(timeout: 10),
-                      "Offline downloads did not open the Saved tab")
-
-        // About → onboarding.
-        openProfile(app)
-        element(app, "profile-about-row").tap()
-        XCTAssertTrue(app.buttons["Find a route near me"].waitForExistence(timeout: 10),
-                      "About did not open onboarding")
-    }
-
     // MARK: - Language
 
     func testChineseReachesTheFiguresTheChartAndTheMonthLabels() {
         let app = launchApp(language: "chinese", simulateWalk: "wukang")
         waitForMap(app)
         recordAWalk(app)
-        openProfile(app, tabLabel: "我的")
+        openProfile(app, tabLabel: "我")
 
         XCTAssertTrue(app.staticTexts["次步行"].exists, "the figure labels are not in Chinese")
         XCTAssertTrue(app.staticTexts["累计公里"].exists)
         XCTAssertTrue(app.staticTexts["添加的路线"].exists)
         XCTAssertTrue(app.staticTexts["步行跨度"].exists, "the chart heading is not in Chinese")
-        XCTAssertTrue(app.staticTexts["你添加的路线"].exists)
-        XCTAssertTrue(app.staticTexts["离线下载"].exists)
-        XCTAssertTrue(app.staticTexts["关于可步行的上海"].exists)
 
         // The month labels follow the app's language, not the phone's.
         let months = element(app, "profile-walk-range-chart")
@@ -254,25 +230,25 @@ final class ProfileUITests: XCTestCase {
     func testTheLanguageChoiceSurvivesRelaunch() {
         let app = launchApp()
         waitForMap(app)
-        openProfile(app)
+        app.tabBars.buttons["Me"].tap()
 
-        element(app, "language-chinese").tap()
-        Thread.sleep(forTimeInterval: 1.0)
-        XCTAssertTrue(app.staticTexts["设置"].exists, "the switch did not change the screen")
+        element(app, "me-language-picker").tap()
+        app.buttons["中文"].tap()
+        XCTAssertTrue(app.tabBars.buttons["我"].waitForExistence(timeout: 3),
+                      "the switch did not change the screen")
 
         // Relaunch without the reset. The language is a stored choice, so it
         // has to come back on its own.
         let relaunched = launchApp(resetUserState: false, setLanguage: false)
         waitForMap(relaunched)
-        XCTAssertTrue(relaunched.tabBars.buttons["我的"].exists,
+        XCTAssertTrue(relaunched.tabBars.buttons["我"].exists,
                       "the language choice did not survive a relaunch")
-        openProfile(relaunched, tabLabel: "我的")
-        XCTAssertTrue(relaunched.staticTexts["设置"].exists)
 
         // Put it back, so the next launch of the shared simulator starts clean.
-        element(relaunched, "language-english").tap()
-        Thread.sleep(forTimeInterval: 0.8)
-        XCTAssertTrue(relaunched.staticTexts["Settings"].exists)
+        relaunched.tabBars.buttons["我"].tap()
+        element(relaunched, "me-language-picker").tap()
+        relaunched.buttons["English"].tap()
+        XCTAssertTrue(relaunched.tabBars.buttons["Me"].waitForExistence(timeout: 3))
     }
 
     // MARK: - Polish
@@ -315,11 +291,8 @@ final class ProfileUITests: XCTestCase {
     func testAnEmptyListExplainsItselfRatherThanShowingABlankPage() {
         let app = launchApp()
         waitForMap(app)
-        openProfile(app)
         drawARoute(app, named: "Evening loop")
 
-        app.tabBars.buttons["Map"].tap()
-        waitForMap(app)
         element(app, "sheet-handle").tap()
         Thread.sleep(forTimeInterval: 1.2)
         // The drawn route is the sixth, so it sits at the bottom of the list
@@ -349,7 +322,7 @@ final class ProfileUITests: XCTestCase {
     }
 
     /// The largest accessibility text size is the one that breaks layouts. The
-    /// figures must still be readable and every settings row still reachable.
+    /// figures must still be readable.
     func testTheProfileHoldsUpAtTheLargestTextSize() {
         let app = launchApp(
             simulateWalk: "wukang",
@@ -364,20 +337,5 @@ final class ProfileUITests: XCTestCase {
         XCTAssertEqual(element(app, "profile-walk-count").value as? String, "1")
         XCTAssertEqual(element(app, "profile-routes-added").value as? String, "0")
         capture(app, "73-profile-largest-text-en")
-
-        // Every settings row is still a real target. `isHittable` rather than
-        // `exists`: at this size the rows sit under the floating tab bar until
-        // they are scrolled up, and only hittable says a finger reaches them.
-        for identifier in ["profile-draw-route-row", "profile-offline-row", "profile-about-row"] {
-            XCTAssertTrue(element(app, identifier).waitForExistence(timeout: 5),
-                          "\(identifier) is missing")
-            for _ in 0..<8 where !element(app, identifier).isHittable {
-                app.swipeUp()
-                Thread.sleep(forTimeInterval: 0.5)
-            }
-            XCTAssertTrue(element(app, identifier).isHittable,
-                          "\(identifier) cannot be reached at the largest text size")
-        }
-        capture(app, "74-profile-largest-text-settings-en")
     }
 }
