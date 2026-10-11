@@ -60,8 +60,8 @@ struct Figure: View {
     }
 }
 
-/// The three-figure strip that tops a route: how far, how long, how many dead
-/// ends.
+/// A row of figures on one card: the tracking screen's distance, pace and
+/// distance remaining, and the design-system gallery's sample.
 ///
 /// A card, not a ruled band. The figures sit on `surface` with separators
 /// between the cells rather than hairlines drawn across the page.
@@ -283,9 +283,11 @@ struct TagChip: View {
 
 /// Wraps its children onto the next line when they run out of room.
 ///
-/// The three route tags are free text in two languages, so their combined width
-/// is not predictable — an `HStack` would either clip them or force them to
-/// shrink. This is the smallest thing that lets them wrap honestly.
+/// A route's tags come from the fixed `RouteTag` list, but their names run to
+/// different lengths in English and Chinese and grow with the text size, so
+/// their combined width is not predictable — an `HStack` would either clip
+/// them or force them to shrink. This is the smallest thing that lets them
+/// wrap honestly.
 struct FlowRow: Layout {
     var spacing: CGFloat = 8
 
