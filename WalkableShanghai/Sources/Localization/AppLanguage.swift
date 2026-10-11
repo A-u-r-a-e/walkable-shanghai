@@ -30,7 +30,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     var endonym: String {
         switch self {
         case .english: return "English"
-        case .chinese: return "中文"
+        case .chinese: return "简体中文"
         }
     }
 

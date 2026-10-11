@@ -53,8 +53,8 @@ final class LanguageSwitchUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["How far it actually goes"].exists)
         capture(app, "01-onboarding-en")
 
-        // 2 — Tap 中文. This is the real control, not a test hook.
-        let chineseOption = app.buttons["中文"]
+        // 2 — Tap 简体中文. This is the real control, not a test hook.
+        let chineseOption = app.buttons["简体中文"]
         XCTAssertTrue(chineseOption.exists, "expected the Chinese option in the language switch")
         chineseOption.tap()
 
@@ -79,11 +79,11 @@ final class LanguageSwitchUITests: XCTestCase {
         XCTAssertTrue(mapTab.waitForExistence(timeout: 5), "expected Chinese tab titles")
         XCTAssertTrue(app.tabBars.buttons["社区"].exists)
         XCTAssertTrue(app.tabBars.buttons["收藏"].exists)
-        XCTAssertTrue(app.tabBars.buttons["我的"].exists)
+        XCTAssertTrue(app.tabBars.buttons["我"].exists)
         capture(app, "03-tabshell-zh")
 
         // 4 — Switch back from the language switch's permanent home.
-        app.tabBars.buttons["我的"].tap()
+        app.tabBars.buttons["我"].tap()
         let englishOption = app.buttons["English"]
         XCTAssertTrue(englishOption.waitForExistence(timeout: 5), "expected the language switch on the You tab")
         englishOption.tap()
@@ -94,7 +94,7 @@ final class LanguageSwitchUITests: XCTestCase {
         )
         XCTAssertTrue(app.tabBars.buttons["Community"].exists)
         XCTAssertTrue(app.tabBars.buttons["Saved"].exists)
-        XCTAssertTrue(app.tabBars.buttons["You"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Me"].exists)
         capture(app, "04-tabshell-en")
 
         // 5 — The map screen, which is where the bundled catalogue first shows
@@ -159,7 +159,7 @@ final class LanguageSwitchUITests: XCTestCase {
         let app = launchApp()
 
         app.buttons["Find a route near me"].tap()
-        app.tabBars.buttons["You"].tap()
+        app.tabBars.buttons["Me"].tap()
 
         app.buttons["Design system"].tap()
         // Assert on the navigation title, not on a section label: the labels are
@@ -169,7 +169,7 @@ final class LanguageSwitchUITests: XCTestCase {
         capture(app, "06-design-system-en")
 
         app.buttons["Done"].tap()
-        app.buttons["中文"].tap()
+        app.buttons["简体中文"].tap()
         app.buttons["设计系统"].tap()
         XCTAssertTrue(app.navigationBars["设计系统"].waitForExistence(timeout: 5))
         capture(app, "07-design-system-zh")

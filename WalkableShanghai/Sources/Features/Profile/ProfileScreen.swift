@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// Screen 11 — the walker, their figures, and the app's settings.
+/// The profile page opened from the Me list: the walker and their figures.
 ///
 /// Every number here is computed. The source design hardcoded all four
 /// statistics and all six bar heights; this reads them off the walks and drawn
@@ -13,12 +13,7 @@ struct ProfileScreen: View {
     @Environment(RouteStore.self) private var store
     @Environment(WalkStore.self) private var walks
 
-    @State private var isShowingOnboarding = false
-    @State private var isShowingDesignSystem = false
-    @State private var isShowingBuilder = false
-
     var body: some View {
-        @Bindable var settings = settings
         let language = settings.language
 
         ScrollView {
@@ -26,7 +21,6 @@ struct ProfileScreen: View {
                 identity(language: language)
                 statistics(language: language)
                 walkRange(language: language)
-                settingsSection(language: language, binding: $settings.language)
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.vertical, Theme.Space.s4)
@@ -34,20 +28,8 @@ struct ProfileScreen: View {
             .padding(.bottom, Theme.Space.s8 + 72)
         }
         .screenBackground()
-        .navigationTitle("tab.you".localized(language))
+        .navigationTitle("me.profile".localized(language))
         .navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $isShowingOnboarding) {
-            OnboardingView(
-                onFindRoute: { isShowingOnboarding = false },
-                onShareRoute: { isShowingOnboarding = false }
-            )
-        }
-        .sheet(isPresented: $isShowingDesignSystem) {
-            NavigationStack { DesignSystemGalleryView() }
-        }
-        .fullScreenCover(isPresented: $isShowingBuilder) {
-            NavigationStack { RouteBuilderScreen() }
-        }
     }
 
     // MARK: - Identity
@@ -205,101 +187,6 @@ struct ProfileScreen: View {
         month.start.formatted(
             Date.FormatStyle(locale: language.locale).month(.abbreviated)
         )
-    }
-
-    // MARK: - Settings
-
-    private func settingsSection(
-        language: AppLanguage,
-        binding: Binding<AppLanguage>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("settings.title".localized(language))
-                .sectionLabel()
-                .padding(.bottom, Theme.Space.s2)
-
-            // One grouped card. The rules that used to run across the page
-            // have moved inside it.
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: Theme.Space.s3) {
-                    Text("settings.language".localized(language))
-                        .font(Typography.body)
-                        .foregroundStyle(Theme.label)
-                    Spacer(minLength: Theme.Space.s2)
-                    SegmentedRing(
-                        options: AppLanguage.allCases.map { ($0, $0.endonym) },
-                        selection: binding,
-                        identifiers: ["language-english", "language-chinese"]
-                    )
-                    .frame(width: 168)
-                }
-                .padding(.vertical, Theme.Space.s3)
-
-                SeparatorRule()
-
-                // A real count rather than a static label.
-                settingsRow(
-                    title: "settings.routesYouAdded".localized(language),
-                    detail: String(walks.draftRoutes.count),
-                    identifier: "profile-draw-route-row"
-                ) { isShowingBuilder = true }
-
-                SeparatorRule()
-
-                settingsRow(
-                    title: "settings.about".localized(language),
-                    detail: nil,
-                    identifier: "profile-about-row"
-                ) { isShowingOnboarding = true }
-
-                SeparatorRule()
-
-                settingsRow(
-                    title: "settings.designSystem".localized(language),
-                    detail: nil,
-                    identifier: "profile-design-system-row"
-                ) { isShowingDesignSystem = true }
-            }
-            .padding(.horizontal, Theme.Space.s3)
-            .card(radius: Theme.Radius.lg)
-        }
-    }
-
-    private func settingsRow(
-        title: String,
-        detail: String?,
-        identifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: Theme.Space.s2) {
-                Text(title)
-                    .font(Typography.body)
-                    .foregroundStyle(Theme.label)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: Theme.Space.s2)
-                if let detail {
-                    Text(detail)
-                        .font(Typography.meta)
-                        .foregroundStyle(Theme.labelTertiary)
-                        .tabularFigures()
-                }
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.labelTertiary)
-            }
-            .padding(.vertical, Theme.Space.s3)
-            // The whole row is the target, and never shorter than a fingertip.
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(identifier)
-        // The count is the row's value, not part of its name — a screen reader
-        // then reads "Offline downloads, 2" rather than running the two
-        // together.
-        .accessibilityLabel(title)
-        .accessibilityValue(detail ?? "")
     }
 
     private func figure(_ value: Double) -> String { String(format: "%.1f", value) }
