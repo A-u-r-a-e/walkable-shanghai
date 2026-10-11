@@ -134,11 +134,11 @@ struct ProfileScreen: View {
 
     /// The chart, styled to the tokens rather than to Swift Charts' defaults.
     ///
-    /// Each bar is a flat accent fill capped by a rule at its value, which is
-    /// the whole reason this screen has a chart rather than a list: the height
-    /// says "further" without a second axis. The baseline is a separator under the plot, and the
-    /// whole thing sits on a card — so the rule that used to run across the page
-    /// is now inside a group, like every other separator in the app.
+    /// Each bar is a flat neutral fill, and its height says "further" without
+    /// a second axis, which is the whole reason this screen has a chart rather
+    /// than a list. The baseline is a separator under the plot, and the whole
+    /// thing sits on a card — so the rule that used to run across the page is
+    /// now inside a group, like every other separator in the app.
     private func chart(months: [MonthlyBest], language: AppLanguage) -> some View {
         let top = WalkRange.scaleTop(months)
 
@@ -150,26 +150,13 @@ struct ProfileScreen: View {
                         y: .value("km", month.longestKm),
                         width: .ratio(0.5)
                     )
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.labelSecondary)
                     // Swift Charts' own corner rounding. A `clipShape` around
                     // the mark compiles and draws, but it costs the chart its
                     // accessibility element — the identifier below then lands on
                     // nothing and three UI tests stop being able to find the
                     // chart at all.
                     .cornerRadius(Theme.Radius.xs, style: .continuous)
-
-                    // The top rule. A thin rectangle centred on the
-                    // value rather than a border on the bar, so the line reads
-                    // as a measurement mark and the fill stays quiet under it.
-                    if month.longestKm > 0 {
-                        RectangleMark(
-                            x: .value("month", monthLabel(month, language: language)),
-                            y: .value("km", month.longestKm),
-                            width: .ratio(0.5),
-                            height: .fixed(2)
-                        )
-                        .foregroundStyle(Theme.accent)
-                    }
                 }
             }
             .chartYScale(domain: 0...top)

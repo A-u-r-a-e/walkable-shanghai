@@ -63,7 +63,7 @@ struct DesignSystemGalleryView: View {
                     VStack(alignment: .leading, spacing: Theme.Space.s3) {
                         HStack(spacing: Theme.Space.s2) {
                             TagChip(text: "Plane trees", style: .neutral)
-                            TagChip(text: "Morning", style: .featured)
+                            TagChip(text: "Featured", style: .featured)
                             TagChip(text: "Xuhui", style: .neutral)
                             TagChip(text: "Green", style: .neutral, symbol: "leaf")
                         }

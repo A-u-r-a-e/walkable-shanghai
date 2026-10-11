@@ -108,7 +108,7 @@ struct OnboardingView: View {
         HStack(alignment: .top, spacing: Theme.Space.s3) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(Theme.label)
                 .frame(width: 34, height: 34)
                 // A neutral well, so the tile reads against the white card.
                 .background(Theme.fill, in: Theme.shape(Theme.Radius.xs))

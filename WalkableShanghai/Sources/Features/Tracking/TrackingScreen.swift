@@ -68,7 +68,7 @@ struct TrackingScreen: View {
 
             Text((session.state == .running ? "track.recording" : "track.paused").localized(language))
                 .font(Typography.label)
-                .foregroundStyle(session.state == .running ? Theme.accent : Theme.labelSecondary)
+                .foregroundStyle(session.state == .running ? Theme.label : Theme.labelSecondary)
                 .accessibilityIdentifier("recording-state")
 
             Spacer()
@@ -141,7 +141,7 @@ struct TrackingScreen: View {
                 Spacer()
                 Text(session.progressPercentText)
                     .font(Typography.figure(.caption))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.label)
                     .accessibilityIdentifier("progress-percent")
             }
 

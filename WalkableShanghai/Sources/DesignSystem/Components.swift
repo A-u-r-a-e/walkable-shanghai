@@ -46,7 +46,7 @@ struct Figure: View {
         VStack(alignment: .leading, spacing: Theme.Space.s1) {
             Text(value)
                 .font(Typography.figure(textStyle))
-                .foregroundStyle(emphasised ? Theme.accent : Theme.label)
+                .foregroundStyle(Theme.label)
             Text(label)
                 .sectionLabel(color: Theme.labelTertiary)
         }

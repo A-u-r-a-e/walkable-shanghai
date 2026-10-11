@@ -103,7 +103,7 @@ struct MapDiscoverScreen: View {
             HStack(spacing: Theme.Space.s2) {
                 Image(systemName: "magnifyingglass")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.labelSecondary)
                 Text("map.search".localized(language))
                     .font(Typography.secondary)
                     .foregroundStyle(Theme.labelSecondary)
@@ -148,7 +148,7 @@ struct MapDiscoverScreen: View {
                             .font(.system(size: 9, weight: .semibold))
                             .tracking(0.6)
                     }
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.label)
                     .frame(width: 58, height: 58)
                     .floatingSurface(in: Circle(), interactive: true)
                 }
