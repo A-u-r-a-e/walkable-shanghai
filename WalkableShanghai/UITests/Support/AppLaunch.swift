@@ -41,7 +41,7 @@ extension XCTestCase {
     /// built at all until the list is scrolled to it.
     func revealRow(_ app: XCUIApplication, _ routeId: String) -> XCUIElement {
         let row = app.buttons["route-row-\(routeId)"]
-        if !(row.waitForExistence(timeout: 5) && row.isHittable) {
+        if !(row.waitForExistence(timeout: 5) && row.isHittable) && isSheetPeeking(app) {
             anyElement(app, "sheet-handle").tap()
             Thread.sleep(forTimeInterval: 1.0)
         }
@@ -53,7 +53,17 @@ extension XCTestCase {
             Thread.sleep(forTimeInterval: 0.6)
         }
         XCTAssertTrue(row.exists, "row \(routeId) missing")
+        XCTAssertTrue(row.isHittable, "row \(routeId) not tappable")
         return row
+    }
+
+    /// The handle reports no state of its own, so read it from where the sheet
+    /// stands: peeking, its top sits in the lower half of the screen (about two
+    /// thirds of the way down); raised, in the upper half. Tapping the handle of
+    /// a raised sheet would collapse it.
+    func isSheetPeeking(_ app: XCUIApplication) -> Bool {
+        let handle = anyElement(app, "sheet-handle")
+        return handle.exists && handle.frame.minY > app.frame.midY
     }
 
     /// Picks an option from the Routes dropdown by its visible title.

@@ -85,9 +85,11 @@ final class SummaryAndBuilderUITests: XCTestCase {
         note.typeText("Quiet before nine.")
         app.buttons["summary-done-button"].tap()
 
-        // Back at the map, where the route's card is still open.
-        XCTAssertTrue(anyElement(app, "record-button").waitForExistence(timeout: 10),
-                      "Done did not return to the map")
+        // Back at the map's route list, not the walked route's card.
+        XCTAssertTrue(anyElement(app, "routes-option-menu").waitForExistence(timeout: 10),
+                      "Done did not return to the route list")
+        XCTAssertFalse(anyElement(app, "route-card").exists, "the walked route's card is still open")
+        XCTAssertFalse(app.staticTexts["summary-route-name"].exists, "the summary is still on screen")
 
         // Relaunch WITHOUT resetting: the walk must still be there. Read it
         // back through the profile's stored-walk count.
@@ -191,9 +193,15 @@ final class SummaryAndBuilderUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the drawn route did not join Mine")
         XCTAssertTrue(app.staticTexts["Evening loop"].exists, "the drawn route is not named in the list")
         attachScreenshot(app, "45-drawn-route-in-mine-en")
+        let rowId = String(row.identifier.dropFirst("route-row-".count))
+
+        // It joins the main map too: Nearby draws a pin for it.
+        chooseRoutesOption(app, "Nearby")
+        XCTAssertTrue(anyElement(app, "route-pin-\(rowId)").waitForExistence(timeout: 5),
+                      "the drawn route has no pin on the map")
 
         // Its card carries the name and no tags.
-        let rowId = String(row.identifier.dropFirst("route-row-".count))
+        chooseRoutesOption(app, "Mine")
         revealRow(app, rowId).tap()
         XCTAssertTrue(anyElement(app, "route-card").waitForExistence(timeout: 5))
         XCTAssertEqual(anyElement(app, "route-card-title").label, "Evening loop")

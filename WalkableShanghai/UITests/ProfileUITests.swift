@@ -79,11 +79,9 @@ final class ProfileUITests: XCTestCase {
         app.buttons["end-walk-button"].tap()
         XCTAssertTrue(app.staticTexts["summary-route-name"].waitForExistence(timeout: 10))
         app.buttons["summary-done-button"].tap()
-        // The walk ends on the route's card; close it to get the list back.
-        let close = element(app, "route-card-close")
-        XCTAssertTrue(close.waitForExistence(timeout: 10), "Done did not return to the route's card")
-        close.tap()
+        // A finished walk returns to the route list, not the route's card.
         waitForMap(app)
+        XCTAssertFalse(element(app, "route-card").exists, "the walked route's card is still open")
     }
 
     private func drawARoute(_ app: XCUIApplication, named name: String) {

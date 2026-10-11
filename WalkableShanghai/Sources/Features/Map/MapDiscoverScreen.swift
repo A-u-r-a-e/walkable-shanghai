@@ -75,7 +75,13 @@ struct MapDiscoverScreen: View {
             NavigationStack { RouteBuilderScreen() }
         }
         .navigationDestination(item: $trackingRoute) { route in
-            TrackingScreen(route: route) { trackingRoute = nil }
+            TrackingScreen(route: route) {
+                // A finished walk returns to the route list, whether it began
+                // on a card or from REC, not to the card of the walk just done.
+                trackingRoute = nil
+                selectedRouteId = nil
+                detent = .peek
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
