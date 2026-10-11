@@ -11,7 +11,7 @@ Research behind the decisions:
 
 ## 1. Structure
 
-The app has two tabs: **Map** and **You**.
+The app has two tabs: **Map** and **Me**.
 
 Removed entirely, with their screens, models, stores, strings, sample data and tests:
 
@@ -126,7 +126,7 @@ The shipped implementation is offline: `walkingNow` returns 0, and `walks` reads
 
 Saving a route also downloads it (route data and the pre-rendered map image). Removing the bookmark deletes the download. There is no separate download control. The separate offline flag is removed; "offline" means "has a stored bundle". Bundles no longer store notes.
 
-## 5. You tab
+## 5. Me tab
 
 An inset grouped list in the style of iOS Settings. Rows open with a chevron.
 
@@ -151,7 +151,7 @@ Not included until a backend exists: sign in, log out, delete account, sync. "Se
   - the card's contents and order, and the absence of the dead-ends figure;
   - map-style switching and persistence;
   - save-then-download and unsave-then-delete;
-  - the You list, the profile page, Remove all downloads;
+  - the Me list, the profile page, Remove all downloads;
   - the walk summary's single Done action;
   - both languages.
 - The full suite runs green on iOS 18.6 (iPhone 16 Pro) and iOS 26.5 (iPhone 17 Pro).

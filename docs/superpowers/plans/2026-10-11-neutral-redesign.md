@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the canopy-green visual system with a neutral, Ecosia-style palette and restructure Walkable Shanghai into two tabs (Map, You), with a route list and route card on the map, fixed route tags, a walker-activity hook, save-equals-download, and a settings-list You tab.
+**Goal:** Replace the canopy-green visual system with a neutral, Ecosia-style palette and restructure Walkable Shanghai into two tabs (Map, Me), with a route list and route card on the map, fixed route tags, a walker-activity hook, save-equals-download, and a settings-list Me tab.
 
 **Architecture:** SwiftUI app over SwiftData. Catalogue data is bundled JSON served through `RouteStore`; walker state lives in SwiftData stores injected through the environment. Pure list logic (`RouteList`) decides what the map sheet shows and is unit-tested apart from views. All map drawing stays behind one wrapper view, `RouteMapView`.
 
@@ -99,13 +99,13 @@ Created:
 | `Sources/Features/Map/RouteCard.swift` | The collapsible route card shown in the sheet |
 | `Sources/Features/Map/MapStyleOption.swift` | Map / Satellite / Traffic choice |
 | `Sources/Features/Map/NearbyOrigin.swift` | Where Nearby measures from |
-| `Sources/Features/You/YouScreen.swift` | The settings list |
-| `Sources/Features/You/DownloadsScreen.swift` | Downloaded routes and Remove all downloads |
+| `Sources/Features/Me/MeScreen.swift` | The settings list |
+| `Sources/Features/Me/DownloadsScreen.swift` | Downloaded routes and Remove all downloads |
 | `Tests/PaletteContrastTests.swift` | WCAG checks on every text/background pair |
 | `Tests/RouteListTests.swift` | Options, ordering, sections, search |
 | `Tests/RouteActivityTests.swift` | The activity hook |
 | `UITests/Support/AppLaunch.swift` | Shared launch and query helpers for UI tests |
-| `UITests/RouteListUITests.swift`, `UITests/RouteCardUITests.swift`, `UITests/YouTabUITests.swift`, `UITests/ScreenshotUITests.swift` | UI coverage for the new screens |
+| `UITests/RouteListUITests.swift`, `UITests/RouteCardUITests.swift`, `UITests/MeTabUITests.swift`, `UITests/ScreenshotUITests.swift` | UI coverage for the new screens |
 
 Deleted: `Sources/Features/Community/` (all), `Sources/Data/CommunityStore.swift`, `Sources/Features/Saved/SavedScreen.swift`, `Sources/Features/Route/FeaturedScreen.swift`, `Sources/Features/Route/RouteDetailScreen.swift` (Task 10, after `FlowRow` moves), `Sources/Features/Shell/PlaceholderScreen.swift`, `Tests/CommunityTests.swift`, `UITests/CommunityUITests.swift`, `UITests/SavedUITests.swift`, `UITests/RouteDetailUITests.swift`, `UITests/RedesignScreenshotUITests.swift`, `Screenshots/redesign/`.
 
@@ -271,16 +271,16 @@ struct MainTabView: View {
                 ProfileScreen()
             }
             .tabItem {
-                Label("tab.you".localized(language), systemImage: "person")
+                Label("tab.me".localized(language), systemImage: "person")
             }
-            .tag(Tab.you)
+            .tag(Tab.me)
         }
         .tint(Theme.accent)
     }
 }
 ```
 
-(`ProfileScreen` becomes `YouScreen` in Task 11.)
+(`ProfileScreen` becomes `MeScreen` in Task 11.)
 
 In `Sources/Features/Profile/ProfileScreen.swift`, delete `var onOpenSaved` and the "Offline downloads" settings row that called it.
 
@@ -555,7 +555,7 @@ Expected: `TEST SUCCEEDED`, including the three new contrast tests.
 
 - [ ] **Step 8: Look at it**
 
-Build, install and launch on the iOS 26.5 simulator in light and dark (`xcrun simctl ui booted appearance dark`), screenshot the map and You tabs with `xcrun simctl io booted screenshot /tmp/ws-<name>.png`, and read the screenshots. No green ground, card or wash should remain; only the route line, selected segment and primary buttons are green.
+Build, install and launch on the iOS 26.5 simulator in light and dark (`xcrun simctl ui booted appearance dark`), screenshot the map and Me tabs with `xcrun simctl io booted screenshot /tmp/ws-<name>.png`, and read the screenshots. No green ground, card or wash should remain; only the route line, selected segment and primary buttons are green.
 
 - [ ] **Step 9: Commit**
 
@@ -2509,65 +2509,65 @@ git commit -m "Show a collapsible route card over the map in place of the route 
 
 ---
 
-### Task 11: You tab as a settings list
+### Task 11: Me tab as a settings list
 
 **Files:**
-- Create: `Sources/Features/You/YouScreen.swift`, `Sources/Features/You/DownloadsScreen.swift`, `UITests/YouTabUITests.swift`
+- Create: `Sources/Features/Me/MeScreen.swift`, `Sources/Features/Me/DownloadsScreen.swift`, `UITests/MeTabUITests.swift`
 - Modify: `Sources/Features/Profile/ProfileScreen.swift`, `Sources/Features/Shell/MainTabView.swift`
 
 **Interfaces:**
 - Consumes: `WalkStore.walkCount`, `WalkStore.totalKm`, `RouteStore.profile`, `OfflineStore.bundles`, `OfflineStore.totalBytes`, `OfflineStore.sizeText(bytes:language:)`, `OfflineStore.storedMapImage(_:)`, `SavedRoutesStore.removeAllDownloads()`.
-- Produces: `YouScreen`, `DownloadsScreen`. The language picker shows `AppLanguage.endonym` ("English", "中文"). Identifiers: `you-profile-row`, `you-language-picker`, `you-downloads-row`, `you-location-row`, `you-how-it-works-row`, `you-version-row`, `you-design-system-row`, `download-row-<id>`, `downloads-total`, `remove-all-downloads`, `downloads-empty`.
+- Produces: `MeScreen`, `DownloadsScreen`. The language picker shows `AppLanguage.endonym` ("English", "中文"). Identifiers: `me-profile-row`, `me-language-picker`, `me-downloads-row`, `me-location-row`, `me-how-it-works-row`, `me-version-row`, `me-design-system-row`, `download-row-<id>`, `downloads-total`, `remove-all-downloads`, `downloads-empty`.
 
 - [ ] **Step 1: Write the failing UI tests**
 
-`UITests/YouTabUITests.swift`:
+`UITests/MeTabUITests.swift`:
 
 ```swift
 import XCTest
 
-/// The You tab: a settings list whose first row opens the profile.
-final class YouTabUITests: XCTestCase {
+/// The Me tab: a settings list whose first row opens the profile.
+final class MeTabUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
 
-    private func openYou(_ app: XCUIApplication, title: String = "You") {
+    private func openMe(_ app: XCUIApplication, title: String = "Me") {
         app.tabBars.buttons[title].tap()
-        XCTAssertTrue(anyElement(app, "you-profile-row").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement(app, "me-profile-row").waitForExistence(timeout: 5))
     }
 
     func testTheListHasItsRowsInOrderAndNoAppearanceSetting() {
         let app = launchWalkable()
-        openYou(app)
-        let order = ["you-profile-row", "you-language-picker", "you-downloads-row", "you-location-row", "you-how-it-works-row", "you-version-row"]
+        openMe(app)
+        let order = ["me-profile-row", "me-language-picker", "me-downloads-row", "me-location-row", "me-how-it-works-row", "me-version-row"]
         let tops = order.map { anyElement(app, $0).frame.minY }
         XCTAssertEqual(tops, tops.sorted())
         XCTAssertFalse(app.staticTexts["Appearance"].exists)
         XCTAssertEqual(app.tabBars.buttons.count, 2)
-        attachScreenshot(app, "you-en")
+        attachScreenshot(app, "me-en")
     }
 
     func testTheProfileRowOpensTheProfile() {
         let app = launchWalkable()
-        openYou(app)
-        anyElement(app, "you-profile-row").tap()
+        openMe(app)
+        anyElement(app, "me-profile-row").tap()
         XCTAssertTrue(anyElement(app, "profile-walk-range-chart").waitForExistence(timeout: 5))
     }
 
     func testLanguageSwitchesImmediately() {
         let app = launchWalkable()
-        openYou(app)
-        anyElement(app, "you-language-picker").tap()
+        openMe(app)
+        anyElement(app, "me-language-picker").tap()
         app.buttons["中文"].tap()
         XCTAssertTrue(app.tabBars.buttons["地图"].waitForExistence(timeout: 3))
     }
 
     func testDownloadsListSavedRoutesAndRemoveAllClearsThem() {
         let app = launchWalkable()
-        openYou(app)
-        anyElement(app, "you-downloads-row").tap()
+        openMe(app)
+        anyElement(app, "me-downloads-row").tap()
         for id in ["wukang", "creek", "century"] {
             XCTAssertTrue(anyElement(app, "download-row-\(id)").waitForExistence(timeout: 5), id)
         }
@@ -2582,16 +2582,16 @@ final class YouTabUITests: XCTestCase {
 
     func testHowItWorksOpensOnboarding() {
         let app = launchWalkable()
-        openYou(app)
-        anyElement(app, "you-how-it-works-row").tap()
+        openMe(app)
+        anyElement(app, "me-how-it-works-row").tap()
         XCTAssertTrue(app.buttons["Find a route near me"].waitForExistence(timeout: 5))
     }
 
     func testTheYouTabReadsInChinese() {
         let app = launchWalkable(language: "chinese")
-        openYou(app, title: "我的")
+        openMe(app, title: "我")
         XCTAssertTrue(app.staticTexts["已下载路线"].exists)
-        attachScreenshot(app, "you-zh")
+        attachScreenshot(app, "me-zh")
     }
 }
 ```
@@ -2599,42 +2599,44 @@ final class YouTabUITests: XCTestCase {
 
 - [ ] **Step 2: Run them to see them fail**
 
-Expected: failures waiting for `you-profile-row`.
+Expected: failures waiting for `me-profile-row`.
 
 - [ ] **Step 3: Strings**
 
 ```bash
-python3 Scripts/strings.py set you.section.preferences "Preferences" "偏好设置"
-python3 Scripts/strings.py set you.section.storage "Storage" "存储"
-python3 Scripts/strings.py set you.section.privacy "Privacy" "隐私"
-python3 Scripts/strings.py set you.section.about "About" "关于"
-python3 Scripts/strings.py plural you.walks "%lld walk" "%lld walks" "%lld 次步行"
-python3 Scripts/strings.py set you.downloads "Downloaded routes" "已下载路线"
-python3 Scripts/strings.py set you.downloads.total "Total %@" "共 %@"
-python3 Scripts/strings.py set you.downloads.removeAll "Remove all downloads" "移除全部下载"
-python3 Scripts/strings.py set you.downloads.confirm "Saved routes will be unsaved." "已收藏的路线将取消收藏。"
-python3 Scripts/strings.py set you.downloads.empty "Saved routes are downloaded here." "收藏的路线会下载到这里。"
-python3 Scripts/strings.py set you.location "Location access" "位置权限"
-python3 Scripts/strings.py set you.howItWorks "How Walkable Shanghai works" "Walkable Shanghai 使用说明"
-python3 Scripts/strings.py set you.version "Version" "版本"
-python3 Scripts/strings.py set you.profile "Profile" "个人资料"
+python3 Scripts/strings.py set tab.me "Me" "我" "Second tab: the walker's settings."
+python3 Scripts/strings.py remove tab.you
+python3 Scripts/strings.py set me.section.preferences "Preferences" "偏好设置"
+python3 Scripts/strings.py set me.section.storage "Storage" "存储"
+python3 Scripts/strings.py set me.section.privacy "Privacy" "隐私"
+python3 Scripts/strings.py set me.section.about "About" "关于"
+python3 Scripts/strings.py plural me.walks "%lld walk" "%lld walks" "%lld 次步行"
+python3 Scripts/strings.py set me.downloads "Downloaded routes" "已下载路线"
+python3 Scripts/strings.py set me.downloads.total "Total %@" "共 %@"
+python3 Scripts/strings.py set me.downloads.removeAll "Remove all downloads" "移除全部下载"
+python3 Scripts/strings.py set me.downloads.confirm "Saved routes will be unsaved." "已收藏的路线将取消收藏。"
+python3 Scripts/strings.py set me.downloads.empty "Saved routes are downloaded here." "收藏的路线会下载到这里。"
+python3 Scripts/strings.py set me.location "Location access" "位置权限"
+python3 Scripts/strings.py set me.howItWorks "How Walkable Shanghai works" "Walkable Shanghai 使用说明"
+python3 Scripts/strings.py set me.version "Version" "版本"
+python3 Scripts/strings.py set me.profile "Profile" "个人资料"
 python3 Scripts/strings.py set action.cancel "Cancel" "取消"
 python3 Scripts/strings.py remove settings.title settings.about settings.routesYouAdded settings.offlineDownloads settings.drawRoute
 ```
 
 - [ ] **Step 4: The settings list**
 
-`Sources/Features/You/YouScreen.swift`:
+`Sources/Features/Me/MeScreen.swift`:
 
 ```swift
 import SwiftUI
 
-/// The You tab: an inset grouped list, in the manner of iOS Settings.
+/// The Me tab: an inset grouped list, in the manner of iOS Settings.
 ///
 /// The profile is one row that opens its own page; everything else is a
 /// setting. Rows that need an account (sign in, sync, delete account) wait for
 /// a backend. There is no appearance setting: the app follows the phone.
-struct YouScreen: View {
+struct MeScreen: View {
 
     @Environment(AppSettings.self) private var settings
     @Environment(RouteStore.self) private var store
@@ -2656,58 +2658,58 @@ struct YouScreen: View {
                 } label: {
                     profileRow(language: language)
                 }
-                .accessibilityIdentifier("you-profile-row")
+                .accessibilityIdentifier("me-profile-row")
             }
 
-            Section("you.section.preferences".localized(language)) {
+            Section("me.section.preferences".localized(language)) {
                 Picker("settings.language".localized(language), selection: $settings.language) {
                     ForEach(AppLanguage.allCases, id: \.self) { option in
                         Text(option.endonym).tag(option)
                     }
                 }
                 .pickerStyle(.menu)
-                .accessibilityIdentifier("you-language-picker")
+                .accessibilityIdentifier("me-language-picker")
             }
 
-            Section("you.section.storage".localized(language)) {
+            Section("me.section.storage".localized(language)) {
                 NavigationLink {
                     DownloadsScreen()
                 } label: {
-                    LabeledContent("you.downloads".localized(language), value: OfflineStore.sizeText(bytes: offline.totalBytes, language: language))
+                    LabeledContent("me.downloads".localized(language), value: OfflineStore.sizeText(bytes: offline.totalBytes, language: language))
                 }
-                .accessibilityIdentifier("you-downloads-row")
+                .accessibilityIdentifier("me-downloads-row")
             }
 
-            Section("you.section.privacy".localized(language)) {
+            Section("me.section.privacy".localized(language)) {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 } label: {
-                    LabeledContent("you.location".localized(language)) {
+                    LabeledContent("me.location".localized(language)) {
                         Image(systemName: "arrow.up.forward.app")
                             .foregroundStyle(Theme.labelTertiary)
                     }
                 }
                 .foregroundStyle(Theme.label)
-                .accessibilityIdentifier("you-location-row")
+                .accessibilityIdentifier("me-location-row")
             }
 
-            Section("you.section.about".localized(language)) {
-                Button("you.howItWorks".localized(language)) { isShowingOnboarding = true }
+            Section("me.section.about".localized(language)) {
+                Button("me.howItWorks".localized(language)) { isShowingOnboarding = true }
                     .foregroundStyle(Theme.label)
-                    .accessibilityIdentifier("you-how-it-works-row")
-                LabeledContent("you.version".localized(language), value: Self.version)
-                    .accessibilityIdentifier("you-version-row")
+                    .accessibilityIdentifier("me-how-it-works-row")
+                LabeledContent("me.version".localized(language), value: Self.version)
+                    .accessibilityIdentifier("me-version-row")
                 #if DEBUG
                 Button("settings.designSystem".localized(language)) { isShowingDesignSystem = true }
                     .foregroundStyle(Theme.label)
-                    .accessibilityIdentifier("you-design-system-row")
+                    .accessibilityIdentifier("me-design-system-row")
                 #endif
             }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Theme.bg.ignoresSafeArea())
-        .navigationTitle("tab.you".localized(language))
+        .navigationTitle("tab.me".localized(language))
         .fullScreenCover(isPresented: $isShowingOnboarding) {
             OnboardingView(
                 onFindRoute: { isShowingOnboarding = false },
@@ -2726,7 +2728,7 @@ struct YouScreen: View {
                 Text(store.profile?.name ?? "")
                     .font(Typography.rowTitle)
                     .foregroundStyle(Theme.label)
-                Text("\(L10n.string("you.walks", language, count: walks.walkCount)) · \(String(format: "%.1f", walks.totalKm)) \("unit.km".localized(language))")
+                Text("\(L10n.string("me.walks", language, count: walks.walkCount)) · \(String(format: "%.1f", walks.totalKm)) \("unit.km".localized(language))")
                     .font(Typography.meta)
                     .foregroundStyle(Theme.labelSecondary)
             }
@@ -2746,7 +2748,7 @@ struct YouScreen: View {
 
 - [ ] **Step 5: Downloads**
 
-`Sources/Features/You/DownloadsScreen.swift`:
+`Sources/Features/Me/DownloadsScreen.swift`:
 
 ```swift
 import SwiftUI
@@ -2770,7 +2772,7 @@ struct DownloadsScreen: View {
 
         List {
             if bundles.isEmpty {
-                EmptyStateNote(text: "you.downloads.empty".localized(language), identifier: "downloads-empty")
+                EmptyStateNote(text: "me.downloads.empty".localized(language), identifier: "downloads-empty")
                     .listRowBackground(Color.clear)
             } else {
                 Section {
@@ -2778,12 +2780,12 @@ struct DownloadsScreen: View {
                         row(bundle, language: language)
                     }
                 } footer: {
-                    Text("you.downloads.total".localized(language, OfflineStore.sizeText(bytes: offline.totalBytes, language: language)))
+                    Text("me.downloads.total".localized(language, OfflineStore.sizeText(bytes: offline.totalBytes, language: language)))
                         .accessibilityIdentifier("downloads-total")
                 }
 
                 Section {
-                    Button("you.downloads.removeAll".localized(language), role: .destructive) {
+                    Button("me.downloads.removeAll".localized(language), role: .destructive) {
                         isConfirmingRemoval = true
                     }
                     .accessibilityIdentifier("remove-all-downloads")
@@ -2793,18 +2795,18 @@ struct DownloadsScreen: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Theme.bg.ignoresSafeArea())
-        .navigationTitle("you.downloads".localized(language))
+        .navigationTitle("me.downloads".localized(language))
         .confirmationDialog(
-            "you.downloads.removeAll".localized(language),
+            "me.downloads.removeAll".localized(language),
             isPresented: $isConfirmingRemoval,
             titleVisibility: .visible
         ) {
-            Button("you.downloads.removeAll".localized(language), role: .destructive) {
+            Button("me.downloads.removeAll".localized(language), role: .destructive) {
                 saved.removeAllDownloads()
             }
             Button("action.cancel".localized(language), role: .cancel) {}
         } message: {
-            Text("you.downloads.confirm".localized(language))
+            Text("me.downloads.confirm".localized(language))
         }
     }
 
@@ -2836,13 +2838,13 @@ struct DownloadsScreen: View {
 
 - [ ] **Step 6: Slim the profile page and swap the tab root**
 
-`Sources/Features/Profile/ProfileScreen.swift`: delete `settingsSection(...)` and everything only it used (`isShowingOnboarding`, `isShowingDesignSystem`, `isShowingBuilder`, their covers/sheets, the `SavedRoutesStore` environment if now unused); set `.navigationTitle("you.profile".localized(language))`. Update the type comment: the profile page opened from the You list.
+`Sources/Features/Profile/ProfileScreen.swift`: delete `settingsSection(...)` and everything only it used (`isShowingOnboarding`, `isShowingDesignSystem`, `isShowingBuilder`, their covers/sheets, the `SavedRoutesStore` environment if now unused); set `.navigationTitle("me.profile".localized(language))`. Update the type comment: the profile page opened from the Me list.
 
-`Sources/Features/Shell/MainTabView.swift`: the You tab's root becomes `YouScreen()`.
+`Sources/Features/Shell/MainTabView.swift`: rename `Tab.you` to `Tab.me`, label the tab with `"tab.me".localized(language)` and the `person` symbol, and make its root `MeScreen()`. Update every other reference to `Tab.you` or `tab.you` the compiler or `grep -rn 'tab.you\|\.you\b' Sources` finds.
 
 - [ ] **Step 7: Run the tests**
 
-Run `YouTabUITests`, `ProfileUITests` and the unit tests. `ProfileUITests` will fail where it expects the profile at the tab root or the old settings rows: in that file, after switching to the You tab, tap `you-profile-row` before asserting profile content, and delete `testTheThreeSettingsRowsGoWhereTheySay` and `testTheLanguageChoiceSurvivesRelaunch`'s use of the old control (rewrite it to use `you-language-picker`).
+Run `MeTabUITests`, `ProfileUITests` and the unit tests. `ProfileUITests` will fail where it expects the profile at the tab root or the old settings rows: in that file, after switching to the Me tab, tap `me-profile-row` before asserting profile content, and delete `testTheThreeSettingsRowsGoWhereTheySay` and `testTheLanguageChoiceSurvivesRelaunch`'s use of the old control (rewrite it to use `me-language-picker`).
 Expected: all pass.
 
 - [ ] **Step 8: Commit**
@@ -2850,7 +2852,7 @@ Expected: all pass.
 ```bash
 cd /Users/aurae25/walkable-shanghai
 git add -A
-git commit -m "Turn the You tab into a settings list with profile and downloads pages"
+git commit -m "Turn the Me tab into a settings list with profile and downloads pages"
 ```
 
 ---
@@ -2905,8 +2907,8 @@ git commit -m "Drop walker-chosen tags from the builder; tags are the fixed deve
 - [ ] **Step 1: Update each class**
 
 - `TrackingUITests`: where a test opened route detail and tapped Start, use `revealRow(app, "wukang").tap()` then `anyElement(app, "start-walking-button").tap()`. `testRecButtonOnTheMapAlsoStartsAWalk` stays as is. Make its `launchApp` pass `-uitest.ignoreLocation`.
-- `LanguageSwitchUITests`: the tab bar has two items; assert `Map`/`You` (and their Chinese labels) and that `Community`/`Saved` do not exist.
-- `ProfileUITests`: every path to the profile goes You tab → `you-profile-row`. Delete assertions about the removed settings rows.
+- `LanguageSwitchUITests`: the tab bar has two items; assert `Map`/`Me` (and their Chinese labels) and that `Community`/`Saved` do not exist.
+- `ProfileUITests`: every path to the profile goes Me tab → `me-profile-row`. Delete assertions about the removed settings rows.
 - Any remaining use of `routes-in-view-count`, `route-pin-<number>`, `map-filter-*`, `featured-banner`, `notes-button`, `offline-toggle` is replaced by the new identifiers or deleted with its assertion.
 
 - [ ] **Step 2: Run the whole UI suite on iOS 26.5**
@@ -2961,12 +2963,12 @@ final class ScreenshotUITests: XCTestCase {
         attachScreenshot(app, "06-route-card-collapsed")
         anyElement(app, "route-card-close").tap()
 
-        app.tabBars.buttons["You"].tap()
-        attachScreenshot(app, "07-you")
-        anyElement(app, "you-profile-row").tap()
+        app.tabBars.buttons["Me"].tap()
+        attachScreenshot(app, "07-me")
+        anyElement(app, "me-profile-row").tap()
         attachScreenshot(app, "08-profile")
         app.navigationBars.buttons.firstMatch.tap()
-        anyElement(app, "you-downloads-row").tap()
+        anyElement(app, "me-downloads-row").tap()
         attachScreenshot(app, "09-downloads")
     }
 
@@ -3018,7 +3020,7 @@ Expected: `TEST SUCCEEDED` on both. Report the totals from the `Executed … tes
 
 - [ ] **Step 4: Rewrite the docs**
 
-`DESIGN.md`: replace the canopy system with the neutral system — the palette table from `Palette.swift`, where green may and may not appear, the measured contrast ratios (from `PaletteContrastTests`' pairs), the two tabs, the Routes sheet and its five options, the route card and its two heights, the You list. Cite `research/ecosia-design-research.md` and `research/instagram-settings-research.md`. Remove all canopy, wash, sunlight and "green real estate" material.
+`DESIGN.md`: replace the canopy system with the neutral system — the palette table from `Palette.swift`, where green may and may not appear, the measured contrast ratios (from `PaletteContrastTests`' pairs), the two tabs, the Routes sheet and its five options, the route card and its two heights, the Me list. Cite `research/ecosia-design-research.md` and `research/instagram-settings-research.md`. Remove all canopy, wash, sunlight and "green real estate" material.
 
 `README.md`: update the opening status, the layout section (folders added and removed), the UI-test notes (shared helpers in `UITests/Support/AppLaunch.swift`, `-uitest.ignoreLocation`), the offline section (saving downloads; no notes; no separate offline flag), the map section per Task 8's outcome, and add a "Screenshots" section with the commands from Step 1. Remove the test counts that are no longer true and state the new ones from Step 3.
 
