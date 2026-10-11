@@ -1,440 +1,334 @@
 # Walkable Shanghai — design system
 
-This replaces the Classical print-inspired system the app was built with. Three
-things change and nothing else: the app becomes **green all the way through**,
-the surface language becomes **Apple's own** (generous rounded corners,
-materials, Liquid Glass on iOS 26), and the app gains **full dark mode**.
+Neutral grounds in both appearances, near-neutral text, and green kept for the
+few things it marks. The app has two tabs, **Map** and **Me**, and follows
+Apple's shape and material language: continuous rounded corners, Liquid Glass on
+iOS 26 with system materials on iOS 18, and full dark mode that follows the
+system setting.
 
-It is a visual change only. No feature, no data, no navigation, no copy and no
-behaviour moves. If a change to this document would require touching a view
-model, a store or a test that asserts behaviour, it is out of scope.
+Every colour is a token in `Sources/DesignSystem/Theme.swift`, and every token's
+numbers live in `Sources/DesignSystem/Palette.swift`. Screens never use a literal
+colour. If a screen needs a colour the palette lacks, add a role to both files.
 
 ---
 
 ## 0. Research basis
 
-The palette is not invented. It is drawn from what nature and outdoors apps
-actually ship, gathered from first-party sources — brand style guides, live
-design tokens, official logo files — and written up in
-[`research/nature-design-research.md`](../research/nature-design-research.md).
-Four findings decided the values below, and each one overturned a guess:
+Two notes in `research/` decided this system.
 
-| Finding | Evidence | What it changed here |
-|---|---|---|
-| Outdoors greens are **yellow-leaning**, hue 78–120° | Komoot `#4F6814` (78°), iNaturalist `#74AC00` (80°), Pantone Greenery `#88B04B` (84°), AllTrails `#4DA330` (105°); teal-side greens belong to focus/health apps (Forest 160°, PictureThis 156°) | The ramp moved from hue 150° — which reads as corporate mint — to **hue ≈ 100°** |
-| Dark grounds are **green-tinted near-blacks**, never pure black | AllTrails ships `#0E110E` / `#1D211D`; Komoot `#2B3117`; Material says dark grey, not `#000` | The dark ground is `#101410`, the value the research recommends |
-| **Ink stays near-neutral** even in the greenest brands | AllTrails body text is onyx `#161F13`; Gaia's is a plain granite grey; nobody sets paragraphs in mid-saturation green | `label` is AllTrails' onyx exactly; the supporting weights are neutral greys |
-| Light grounds are **warm paper**, and the green comes from *real estate* | Komoot `#FAF9F4`, AllTrails birch `#F2EEE7`, with big soft-green fills doing the work | The ground is warm paper tilted greener than industry-typical, and `accentSoft` is used generously |
-
-We sit deliberately greener than the industry on the light ground, because this
-app is asked to be heavily nature-themed. But the *mechanism* is theirs: most of
-the green comes from green surfaces, washes and controls, not from dyeing the
-page.
+- [`research/ecosia-design-research.md`](../research/ecosia-design-research.md)
+  reads Ecosia's own tokens: its iOS app, its web stylesheets and its blog
+  theme. In October 2025 Ecosia moved its interface off green. Grounds and
+  primary controls became neutral ink, and green stayed in a few deliberate
+  roles. That is the model here: green is a marker, never a ground.
+- [`research/instagram-settings-research.md`](../research/instagram-settings-research.md)
+  records the structure of Instagram's "Settings and activity" screen and
+  Apple's guidance on settings lists. The Me tab follows it: an inset grouped
+  list, the profile reached through its first row.
 
 ---
 
-## 1. Under the canopy
+## 1. Palette
 
-The theme is one image: **walking Shanghai's plane-tree streets with the light
-coming through the leaves.** Plane-tree foliage is a warm yellow-green, which is
-also where the research lands, so the metaphor and the evidence agree.
+The values are read from `Palette.swift`. Each role has one light and one dark
+value.
 
-### The three working greens
-
-Depth is what stops "green everywhere" from becoming a smear. The system works in
-three layers, taken from the ramp at three points, named for what they do rather
-than for where they sit — because the two modes enter from opposite ends. Light
-goes dark at the front; dark goes bright at the front, which is Apple's and
-Material's own lighten-on-dark pattern.
-
-| Layer | Role | Light | Dark |
+| Role | Token | Light | Dark |
 |---|---|---|---|
-| **Mist** (`accentMuted`) | the back: the route still ahead of you, the foot of a chart bar, the start of a progress fill | leaf `#A9CD7F` | canopy `#35661F` |
-| **Fresh** (`accentStrong`) | the middle: the far stop of a growing gradient, a drawn draft line | `#74A343` | `#74A343` |
-| **Canopy** (`accent`) | the front: route lines, icons, selected state, accent text, the rule capping a bar | `#397225` | `#9BD97E` |
+| Background | `bg` | `#F8F8F6` | `#1A1A1A` |
+| Surface (cards, list groups) | `surface` | `#FFFFFF` | `#242424` |
+| Raised surface | `surfaceRaised` | `#FFFFFF` + shadow | `#2F2F2E` |
+| Fill (quiet controls, neutral tags, segmented track) | `fill` | `#F0F0EB` | `#333333` |
+| Separator | `separator` | `#DEDED9` | `#42423F` |
+| Primary text | `label` | `#2B2B29` | `#F4F4F1` |
+| Secondary text | `labelSecondary` | `#63635D` | `#B5B5AE` |
+| Tertiary text | `labelTertiary` | `#6B6B65` | `#A3A39C` |
+| Accent (route line, selected states, filled bookmark, links) | `accent` | `#3F6B23` | `#A9D27E` |
+| Primary button fill | `primaryFill` | `#3F6B23` | `#A9D27E` |
+| Primary button label | `onPrimaryFill` | `#FFFFFF` | `#1A1A1A` |
+| Featured tag fill | `featuredFill` | `#D6E89A` | `#D6E89A` |
+| Featured tag label | `onFeaturedFill` | `#2B2B29` | `#1A1A1A` |
 
-Anything describing an *amount* moves through those layers rather than sitting at
-one green: the chart bars, the progress fill, the tracking screen's walked line
-against the route ahead of it.
+`Theme.swift` adds one alpha colour, the sheet's grab handle: `#2B2B29` at 24%
+in light, `#FFFFFF` at 30% in dark.
 
-### The canopy wash
+The grounds — `bg`, `surface`, `surfaceRaised`, `fill` and `separator` — are
+grey. `PaletteContrastTests.testGroundsAreNeutral` holds each of their ten values
+to a spread of at most 16 between the largest and smallest RGB channel, so a
+ground cannot drift towards a tint.
 
-The signature. Two overlapping soft radial glows at the top of a screen — light
-through leaves, with no hard edge anywhere in it. Radial rather than linear
-because a linear ramp has a direction and a canopy does not: the eye reads a band
-as a header bar and a glow as light. The two stops are offset from each other so
-the overlap is off-centre, which keeps it from reading as a logo.
-
-It appears on **four screens only** — onboarding, featured, the walk summary and
-the profile — and it is strong enough on each to be the thing you remember.
-
-### Restraint — the four rules that keep this from becoming a swamp
-
-1. **Type is not green.** `label`, `labelSecondary` and `labelTertiary` are ink
-   and near-white. This is the research's clearest single pattern, and it is the
-   difference between a theme and a rendering fault.
-2. **Green text never sits on a green ground.** On `accentSoft` a *label* takes
-   `onAccentSoft` or `label`; `accent` is allowed there only for a non-text
-   glyph, which needs 3:1 rather than 4.5:1.
-3. **One warm colour, spent once.** `sunlight` is reserved exclusively for the
-   Featured moment's star. Anywhere else it is noise.
-4. **Green carries no meaning it has not earned.** Not "eco", not "success", not
-   "safe". Environmental messaging is explicitly out of scope.
-
-Note what is *not* on that list any more: the old "one tinted card per screen"
-rule is gone. Soft green is now the app's ordinary surface for cards, sections,
-segmented tracks, avatars and secondary buttons — that is the real-estate lever
-the research points at, and rationing it was what made the first attempt read
-grey.
+Shadows are drawn in light mode only (`Theme.Shadow`). Dark mode separates
+surfaces by lightness, and a shadow on a dark ground does not show.
 
 ---
 
-## 2. Palette
+## 2. Where green may appear
 
-### The foliage ramp
+Green appears in these places and nowhere else:
 
-Seven steps, hue held near 100°.
+- **Primary buttons**: Begin route, New route, Done, End walk, Save route, and
+  the onboarding's first button. `primaryFill` with an `onPrimaryFill` label.
+- **The route line** on every map: the listed routes, the walked half of a route
+  while tracking, the dashed half still ahead, and the builder's dotted draft.
+  A route's pin belongs to its line: a `surface` disc with an `accent` ring and
+  an `accent` centre.
+- **Selected states**: the selected segment of a segmented control (Popular's
+  period selector, the onboarding language switch) and the selected tab item.
+  While tracking, the Recording dot and the progress bar's filled part are
+  `accent`; both mark the walk in progress.
+- **The filled bookmark** on a saved route's card.
+- **The Featured tag.** `featuredFill` with an `onFeaturedFill` label. Every
+  other tag is neutral (`fill` with `label`).
 
-| Step | Hex | Used for |
-|---|---|---|
-| `deep` | `#26430F` | forest anchor; `onAccentSoft` in light |
-| `canopy` | `#35661F` | light: `accentFill`; dark: **mist** layer |
-| `accent` | `#3E7C2B` | the research's interactive green — tuned before use, see below |
-| `fresh` | `#74A343` | **fresh** layer both modes; dark `accentFill` |
-| `leaf` | `#A9CD7F` | light: **mist** layer; dark: `onAccentSoft` |
-| `mist` | `#D6E5B5` | light pin disc |
-| `pale` | `#EAF1D8` | light `accentSoft`, canopy glow, map grade |
+Green does not appear on grounds, cards, list rows, secondary buttons, icons,
+navigation bar buttons, section headers or body text. No text is set in green
+except links and the label of a selected state. The Me list's current-value
+text (the chosen language, the downloads total) is `labelSecondary`, and back
+buttons are `label`: they are chrome, not selections.
 
-### Grounds and surfaces
-
-| Role | Light | Dark |
-|---|---|---|
-| Background | `#F1F3E3` | `#101410` |
-| Surface (card, sheet) | `#F8FAF0` | `#1A1F19` |
-| Surface raised | `#FFFFFF` | `#242A22` |
-| Fill (inset, track, field, media slot) | `#E2E9CC` | `#2B3323` |
-| Mist (card borders, in-card separators) | `#C9D5AB` | `#2F3A26` |
-| Pin disc | `#D6E5B5` | `#242A22` |
-
-### Accent roles
-
-| Role | Light | Dark |
-|---|---|---|
-| `accent` | `#397225` | `#9BD97E` |
-| `accentStrong` | `#74A343` | `#74A343` |
-| `accentMuted` | `#A9CD7F` | `#35661F` |
-| `accentFill` | `#35661F` | `#74A343` |
-| `onAccentFill` | `#FFFFFF` | `#182C08` |
-| `accentSoft` | `#EAF1D8` | `#223018` |
-| `onAccentSoft` | `#26430F` | `#A9CD7F` |
-| `sunlight` (Featured only) | `#7E5B0E` | `#E8B84B` |
-
-### Labels — near-neutral, per the research
-
-| Role | Light | Dark |
-|---|---|---|
-| `label` | `#161F13` | `#F2F4EF` |
-| `labelSecondary` | `#4A544A` | `#AAB4A6` |
-| `labelTertiary` | `#5C625A` | `#9EA99A` |
-
-`label` in light is AllTrails' onyx exactly.
-
-### Two values tuned, and why
-
-Everything else is the researched value used as-is. Two failed measurement and
-were moved the smallest distance that fixed them:
-
-- **`accent` in light: `#3E7C2B` → `#397225`.** The research value clears the
-  ground at 4.53 but measures **4.07 on `fill`** and **4.38 on `accentSoft`** —
-  and since soft green is now ordinary card and section real estate, the accent
-  has to clear it. Two steps darker gives 4.65 and 5.01, still plainly the same
-  foliage green.
-- **`onAccentFill` in dark: `#26430F` → `#182C08`.** Deep-on-fresh measured
-  **3.73** and failed. Darkening the text rather than lightening the button keeps
-  the filled control the `fresh` green the research points at.
-
-### Contrast, measured
-
-Twenty-six real pairings in **both** modes — fifty-two results — checked against
-WCAG 2.1 with the exact values above. **All fifty-two clear AA (4.5:1)**; the
-type pairings clear AAA comfortably. Re-measured from scratch when the palette
-moved to foliage, because a tinted ground changes every ratio on the screen.
-
-| Pairing | Light | Dark |
-|---|---|---|
-| accent on background | 5.18 | 11.17 |
-| accent on surface | 5.52 | 10.06 |
-| accent on surface raised | 5.82 | 8.83 |
-| accent on fill | **4.65** | 7.89 |
-| accent on accentSoft | 5.01 | 8.39 |
-| accent on canopy wash | **4.86** | 6.84 |
-| label on background | 15.06 | 16.79 |
-| label on surface | 16.07 | 15.12 |
-| label on fill | 13.52 | 11.85 |
-| label on accentSoft | 14.58 | 12.61 |
-| label on canopy wash | 14.15 | 10.27 |
-| labelSecondary on background | 7.02 | 8.67 |
-| labelSecondary on surface | 7.50 | 7.81 |
-| labelSecondary on fill | 6.31 | 6.12 |
-| labelSecondary on accentSoft | 6.80 | 6.51 |
-| labelSecondary on canopy wash | 6.60 | 5.30 |
-| labelTertiary on background | 5.57 | 7.61 |
-| labelTertiary on surface | 5.95 | 6.85 |
-| labelTertiary on fill | 5.00 | 5.37 |
-| labelTertiary on accentSoft | 5.40 | 5.72 |
-| labelTertiary on canopy wash | 5.23 | **4.66** |
-| onAccentFill on accentFill | 6.84 | **5.04** |
-| onAccentSoft on accentSoft | 9.55 | 7.80 |
-| sunlight on background | 5.51 | 10.08 |
-| sunlight on surface | 5.88 | 9.08 |
-| sunlight on canopy wash | 5.17 | 6.17 |
-
-"On canopy wash" is measured against the wash at its strongest point — where both
-radial glows overlap — rather than where it has already faded into the ground.
-The dark wash's strength was set by that measurement: at the first strengths
-tried, `labelTertiary` came out at 3.85, so the two glows dropped to 40% and 42%.
+Destructive actions, such as Remove all downloads, use the system red.
 
 ---
 
-## 3. Shape
+## 3. Contrast, measured
 
-The old scale (2 / 4 / 7pt) is retired. Apple's shapes are generous and, more
-importantly, **continuous** — `RoundedRectangle(cornerRadius:style: .continuous)`
-everywhere. A circular-arc corner at these radii reads visibly wrong next to
-system chrome.
+Every text and background pair the app draws must meet WCAG AA: 4.5:1 for body
+text, 3:1 for large text and controls. `PaletteContrastTests` checks the pairs
+below against the numbers in `Palette.swift`, so the test and the screens cannot
+disagree. The ratios are WCAG 2.x relative-luminance ratios computed from those
+numbers.
+
+Text on each ground (light / dark):
+
+| Text | on `bg` | on `surface` | on `surfaceRaised` | on `fill` |
+|---|---|---|---|---|
+| `label` | 13.34 / 15.79 | 14.19 / 14.09 | 14.19 / 12.16 | 12.41 / 11.47 |
+| `labelSecondary` | 5.69 / 8.44 | 6.05 / 7.53 | 6.05 / 6.50 | 5.29 / 6.13 |
+| `labelTertiary` | 5.04 / 6.86 | 5.36 / 6.12 | 5.36 / 5.28 | 4.69 / 4.98 |
+| `accent` | 5.92 / 10.12 | 6.29 / 9.02 | 6.29 / 7.79 | 5.50 / 7.34 |
+
+Labels on filled controls (light / dark):
+
+| Pair | Ratio |
+|---|---|
+| `onPrimaryFill` on `primaryFill` | 6.29 / 10.12 |
+| `onFeaturedFill` on `featuredFill` | 10.72 / 13.15 |
+
+The lowest result is `labelTertiary` on `fill` in light mode, 4.69:1. Any change
+to a ground or a label colour must keep every cell above 4.5.
+
+---
+
+## 4. Structure
+
+### Two tabs
+
+The tab bar has **Map** and **Me** (地图 and 我). The tab and navigation bars are
+the system's own: Liquid Glass on iOS 26, the standard translucent bar on iOS 18.
+`Appearance.apply()` in `WalkableShanghaiApp.swift` sets two things: the
+selected tab item takes `accent`, and navigation bar buttons take `label`.
+
+### Map tab
+
+Over the map, from the top:
+
+- **Search field.** Filters the current route list by route name, in both
+  languages, ignoring case. Clearing it restores the list.
+- **Map-style button**, round, at the top right. Its menu offers **Map**,
+  **Satellite** and **Traffic**. Map is MapKit's standard style with muted
+  emphasis and Apple's points of interest hidden. Satellite is imagery with
+  labels. Traffic is the standard style with traffic shown. The choice persists
+  across launches.
+- **REC button.** Starts tracking at once. With no route chosen, it records
+  against the featured route. It rides above the sheet.
+
+### The Routes sheet
+
+A hand-built sheet with two heights: peeking (at most 300pt, or 42% of the
+screen) and raised (at most 540pt, or 74%). Its header reads **Routes**,
+followed by a dropdown with five options.
+
+| Option | Contents and order |
+|---|---|
+| **Nearby** (default) | All routes, nearest first by distance from the walker to the route's pin. Without location permission, distance is measured from People's Square. |
+| **Popular** | Routes walked in the chosen period, most walks first. A segmented control under the header offers Today, This week, This month and All time; This week is the default. |
+| **Featured** | Routes carrying the `featured` tag. |
+| **Mine** | Routes the walker drew, with a **New route** button at the top that opens the builder. |
+| **Saved** | Two sections: **Mine** first, with the New route button, then **Saved**, the bookmarked routes. |
+
+Each row shows the route name, `3.4 km · 52 min`, and
+`Last updated: <date> · <N> walking now`, with no route number. Every list has
+an empty state: one `labelTertiary` leaf glyph above a sentence, with the glyph
+hidden from VoiceOver. The map's pins show the routes in the current list.
+
+### The route card
+
+Tapping a row or a pin selects the route. The map frames its line, and the
+sheet's content becomes the route card. The card's close button returns to the
+list. The card has two heights:
+
+- **Collapsed**: the title on one line, and `km · min`. The sheet stands 136pt
+  plus the tab bar's clearance.
+- **Expanded**: the whole card, sized to its content up to 560pt or 78% of the
+  screen, whichever is smaller. At the default text size the card fits without
+  scrolling on iOS 26.5 and iOS 18.6. Beyond the cap it scrolls.
+
+Top to bottom:
+
+1. The title, with a bookmark toggle and a share button at the right edge, then
+   the close button.
+2. Distance and time.
+3. The description.
+4. Tags from the fixed `RouteTag` list. Featured is green; the others are
+   neutral.
+5. The creator on the left, `<N> walking now` on the right.
+6. **Begin route**, the primary button, which starts tracking.
+
+Bookmarking a route also downloads it, and removing the bookmark deletes the
+download.
+
+### Me tab
+
+An inset grouped list in the style of iOS Settings. Rows that open a page end
+in a chevron; Location access, which leaves the app, ends in an outward arrow.
+
+1. **Profile row**: avatar, name, and `<N> walks · <X> km`. Opens the profile
+   page: avatar, joined date, the four-figure grid and the walk-range chart.
+2. **Preferences**: Language, English or 简体中文. The app switches immediately.
+3. **Storage**: Downloaded routes, with their total size. Opens the list of
+   downloaded routes and **Remove all downloads**, which asks first. Removing all
+   downloads also removes those bookmarks, because saved and downloaded are one
+   state.
+4. **Privacy**: Location access, which opens the app's page in iOS Settings.
+5. **About**: How Walkable Shanghai works (opens onboarding), the version, and,
+   in debug builds, the design-system gallery.
+
+There is no in-app appearance setting.
+
+---
+
+## 5. Shape
+
+Corners are continuous everywhere: `Theme.shape(_:)` builds
+`RoundedRectangle(cornerRadius:style: .continuous)`, so the style cannot be
+forgotten.
 
 | Token | Value | Used for |
 |---|---|---|
-| `xs` | 8 | chips, small inline controls |
-| `sm` | 12 | text fields, segmented controls, small buttons |
-| `md` | 16 | buttons, list cards, figure cards |
-| `lg` | 22 | grouped cards, the map's floating controls |
-| `xl` | 28 | bottom sheet top corners, hero surfaces |
-| `capsule` | — | pills, the grab handle, filter segments |
+| `xs` | 8 | chips, small inline controls, chart bar tops |
+| `sm` | 12 | text fields, small buttons |
+| `md` | 16 | buttons, cards |
+| `lg` | 22 | grouped cards, floating map controls |
+| `xl` | 28 | the sheet's top corners |
+| capsule | — | pills, the grab handle, segmented controls, the Routes dropdown |
 
-Nesting rule: an inner corner is the outer radius minus the padding between
-them, floored at `xs`. A 16pt card with 8pt padding holds a 8pt inner shape.
+An inner corner is the outer radius minus the padding between them, and never
+less than `xs`.
 
 ---
 
-## 4. Materials and Liquid Glass
+## 6. Materials and Liquid Glass
 
-### The rule
-
-**Glass is for things that float over content.** Anything that sits *on* the
-page is opaque.
+**Glass is for things that float over the map.** Anything that sits on a page is
+opaque.
 
 | Surface | Treatment |
 |---|---|
-| Map search field, filter control, REC button | **Glass** |
-| Map bottom sheet | **Glass**, `xl` top corners |
-| Floating back / bookmark buttons over a map | **Glass**, circular |
-| Tab bar, navigation bar | **System default** — do not restyle |
-| Page backgrounds (onboarding, detail body, profile) | Opaque `bg`, or the header wash gradient |
-| Cards, figure grids, list rows | Opaque surface colour |
-| Long-form reading surfaces | Opaque, always |
+| Search field, map-style button, REC button | `floatingSurface` |
+| Routes sheet and route card | `floatingPanel`, `xl` top corners |
+| Tab bar, navigation bar | system default |
+| Pages (Me, profile, downloads, onboarding, tracking, summary, builder) | opaque `bg` |
+| Cards, figure grids, list groups | opaque `surface` |
 
-Glass over an opaque page is noise: there is nothing behind it to refract. Glass
-over the map is the whole point — the map keeps showing through the controls
-that sit on it.
+`Materials.swift` holds the one fork between iOS versions, and views never write
+`#available` themselves:
 
-### Per-OS behaviour
-
-| | iOS 26+ | iOS 18 (deployment floor) |
+| | iOS 26 | iOS 18 |
 |---|---|---|
-| Floating controls | `.glassEffect(.regular, in:)` | `.background(.ultraThinMaterial)` |
-| Interactive floating controls | `.glassEffect(.regular.interactive(), in:)` | `.background(.ultraThinMaterial)` |
-| Bottom sheet | `.glassEffect(.regular, in:)` | `.background(.regularMaterial)` |
-| Tab bar | system Liquid Glass | system translucent bar |
+| `floatingSurface` | `.glassEffect(.regular, in:)`, or `.regular.interactive()` for buttons | `.ultraThinMaterial` |
+| `floatingPanel` | `.glassEffect(.regular, in:)` | `.regularMaterial` |
 
-One helper carries this — `.floatingSurface(_:in:)` in `Materials.swift`. Views
-never write `#available` themselves. Adding a new floating control means calling
-the helper, not repeating the fork.
+Because the sheet is glass, the basemap shows through it: it reads warm grey
+over the light map and blue-grey over MapKit's dark map. The cards and pages
+behind it stay on the neutral palette.
 
-The iOS 18 fallback is a real design, not a degradation to tolerate:
-`.ultraThinMaterial` over the map gives the same read — content showing through
-a frosted control — without the specular edge. Both were checked on device.
+`.card()` is the opaque card: `surface`, a hairline `separator` border, and a
+small shadow in light mode.
 
 ---
 
-## 5. Typography
+## 7. Typography
 
-**Unchanged.** System font throughout: SF Pro for Latin, automatic PingFang SC
-substitution for Chinese, Dynamic Type on every style, tabular figures on every
-number. `Typography.swift` is not touched by this redesign.
+The system font only: SF Pro for Latin text, with iOS substituting PingFang SC
+for Chinese in the same stack. No font is bundled. Every style in
+`Typography.swift` is built on a Dynamic Type text style, and every figure uses
+tabular digits so columns line up and a running clock does not jitter.
 
-One treatment changes: the small gold uppercase tracked section label
-(`.sectionLabel()`) was a print device. It becomes a plain **secondary-weight
-sentence-case label in the secondary label colour**, which is what iOS uses for
-section headers. Tracking and uppercasing are dropped.
-
----
-
-## 6. Components
-
-**Primary button.** Filled `accentFill`, `onAccentFill` text, radius `md`, 50pt
-tall. This is the biggest departure from the old system, which forbade filled
-buttons entirely. Apple's does not, and a filled foliage button is the clearest
-possible "this is the action".
-
-**Secondary button.** `accentSoft` background, `label` text, radius `md`, no
-border. Soft green rather than a neutral well: it is the second half of a pair of
-actions and belongs to the same family as the primary, one layer back. Its title
-stays `label` — restraint rule 2.
-
-**Cards.** `accentSoft` background, radius `md` or `lg`, a **1pt `mist` border**,
-and a soft shadow in light mode only.
-
-Soft green, not a near-white panel — this is the single biggest lever on how
-green the app reads, because almost everything on almost every screen is in a
-card. It is also exactly the mechanism the research describes: AllTrails and
-Komoot both run warm, barely-tinted *page* grounds and get their green from large
-soft-green surfaces sitting on them. Near-white cards on a cream ground are how
-the first attempt ended up looking grey.
-
-`surface` survives as a token — the map's stored offline drawing uses it for the
-end marker, and it is the natural value for anything that must read as paper
-under the canopy — but no card uses it. A screen full of pale panels was the
-problem, not the solution.
-
-**Canopy wash.** Two overlapping radial glows over the ground, applied with
-`.canopyWash()`. Light: a wide `fresh` glow at 28% with a `pale` glow at 85%
-inside it. Dark: the same geometry as `deep` at 40% and `canopy` at 42%, *lifting*
-the forest ground rather than washing it out — a pale glow on a night ground
-would read as fog rather than as leaves. It is a ground, so it never carries a
-corner, a border or a shadow. Four screens only.
-
-**Separators.** Solid `mist`, and only *inside* a card between rows, inset to the
-content. Screens no longer use hairlines to divide the page; cards do that now.
-The one exception is the seam between a live map and the opaque panel under it —
-that is a boundary between two materials rather than a page dividing itself, and
-iOS draws it too.
-
-**Bottom sheet.** Glass, `xl` top corners, a capsule grab handle. Behaviour,
-detents and drag logic unchanged.
-
-**Filter control.** A capsule track in `accentSoft`, with the selected segment a
-capsule of `accentFill` carrying `onAccentFill` text. The standard iOS segmented
-look, tinted foliage — and the track itself is green real estate.
-
-**Tag chips.** `accentSoft` fill / `onAccentSoft` text when set, `fill` /
-`labelSecondary` when not. Radius `xs`. A chip may carry an SF Symbol before its
-text where the theme genuinely carries the meaning — the "Green" route tag takes
-a leaf — and that glyph is hidden from VoiceOver so the chip still announces
-exactly the word it always did.
-
-**Circular icon button.** A back or dismiss control that sits *on* a page rather
-than floating over a map: an `accentSoft` disc with an `onAccentSoft` glyph, no
-stroke. Anything floating over live content calls `.floatingSurface` instead.
-
-**Avatars.** `accentSoft` with an `accent` ring for the signed-in walker or a
-curator; the neutral well for everyone else.
-
-**Empty states.** A single `accent` leaf above the sentence, hidden from
-VoiceOver. The theme's mark rather than an illustration: the copy and the
-announcement are exactly what they were.
-
-**Figure grid.** A card. Figures sit on `surface` with `mist` separators between
-cells rather than hairlines on the page. Numbers keep tabular figures and their
-emphasis colour.
-
-**Chart.** Bars are a vertical **mist-to-fresh** gradient capped by a 2pt solid
-`accent` rule at the value, with radius `xs` on the bar top (Swift Charts'
-`cornerRadius`, not a `clipShape` — a clip shape draws correctly but costs the
-chart its accessibility element, and three UI tests then cannot find the chart at
-all). The gradient is the point: a bar that grows greener as it grows taller says
-"further" without a second axis. The baseline is a `mist` separator under the
-plot. Month labels in `labelTertiary`. Structure and data unchanged.
-
-**Progress.** A capsule track in `fill` with a capsule fill running the layers
-horizontally — `accentMuted` where it started to `accent` where it has reached —
-at height 6. The old 3pt ruled bar was a print device.
-
-**Route pins.** A `pinDisc` disc — mist green in light so the pin belongs to the
-landscape, raised forest in dark so it reads against one — with an `accent`
-number and a 1.5pt `accent` ring, and a soft shadow.
-
----
-
-## 7. The map — a green landscape
-
-The map is where the theme is most visible and most easily ruined, so its
-translation is spelled out.
-
-| Element | Old (gold) | New (foliage) |
+| Style | Built on | Used for |
 |---|---|---|
-| Route line | `#B68235` @ 90%, 2.4pt | `accent` @ 95%, 2.6pt |
-| Line casing | ink @ 10%, 6.5pt | light: ink @ 14%; dark: white @ 20%, 7pt |
-| Walked line (tracking) | gold solid, 4pt | `accent` (canopy) solid, 4.5pt |
-| Route ahead (tracking) | gold @ 42%, dashed | `accentMuted` (mist) @ 85%, dashed |
-| Draft line (builder) | gold @ 75%, dotted | `accentStrong` (fresh) @ 85%, dotted |
-| Walker dot | gold core, gold halo | `accent` core, `accent` halo |
-| Pin | paper disc, gold ring | `pinDisc` disc, `accent` ring |
-| Basemap grade | paper @ 34% | light: pale `#EAF1D8` @ 40%; dark: `#0A0F09` @ 46% |
+| `display` | large title, medium | screen-opening statements |
+| `title` | title, medium | screen titles, the route card's title |
+| `heading` | title 3, semibold | the Routes header, section headings |
+| `rowTitle` | body, semibold | route names in rows, button labels |
+| `body` | body | prose |
+| `secondary` | subheadline | supporting text, segmented labels |
+| `meta` | footnote | distances, dates, tags |
+| `label` | caption, semibold | section headers, via `.sectionLabel()` |
 
-The grade is what makes the basemap botanical rather than street-atlas grey.
-MapKit exposes no tile filter, so it is a translucent sheet drawn across the map
-beneath the routes and pins — which therefore keep their full saturation. In
-light mode it is the palest step of the foliage ramp, laid on heavily enough that
-Apple's greys and beiges go leaf while water stays recognisably blue. Nature
-includes water, and a map whose rivers have turned green is a map with a bug, not
-a theme. In dark mode the sheet inverts — the night basemap is already dim, so
-grading it lighter would flatten the green instead of lifting it — and it is a
-near-black *green* rather than pure black, so the map does not fall out of the
-palette.
-
-Two things stop the grade from swallowing the route. The casing under each line
-was strengthened (14% from 12% in light, 20% from 18% in dark), because a green
-line on a green map needs more separation than a green line on grey. And tracking
-draws its two halves from **two different layers of the ramp** — canopy behind
-you, mist ahead of you — rather than one green at two opacities, so "done" and "to
-go" read as two states and not as one line with a rendering problem.
-
-MapKit's own dark map is requested explicitly rather than inherited, so the grade
-and the basemap can never disagree about which mode they are in.
+Section headers are sentence case in `labelSecondary`, as iOS sets them.
 
 ---
 
-## 8. What deliberately does not change
+## 8. Components
 
-- **Layout and structure.** Every screen keeps its composition, its order and
-  its information hierarchy. This is a re-skin, not a re-layout.
-- **Navigation.** Four tabs, the same stacks, the same covers, the same back
-  behaviour.
-- **Copy.** No string changes in either language. The String Catalog is not
-  touched.
-- **Typography.** System font, Dynamic Type, tabular figures — as above.
-- **Accessibility conventions.** Every identifier, label and value stays exactly
-  as it is. The UI tests assert behaviour and identity, not colour, and they
-  must keep passing untouched.
-- **Data, stores, models, repositories.** Not touched.
-- **The 44pt minimum target** and the largest-text-size behaviour.
-- **`Theme.Space`.** The 4.6-based spacing scale is idiosyncratic but it is
-  working, it is used everywhere, and rescaling it would be a re-layout. It
-  stays.
+**Primary button.** `primaryFill`, `onPrimaryFill` label, radius `md`, at least
+50pt tall.
+
+**Secondary button.** `fill`, `label` text, radius `md`, no border. Neutral, so
+the second action of a pair reads as the lesser one.
+
+**Segmented control** (`SegmentedRing`). A capsule track in `fill`; the selected
+segment is a `primaryFill` capsule with an `onPrimaryFill` semibold label, the
+others `labelSecondary`.
+
+**Tag chip.** Featured: `featuredFill` / `onFeaturedFill`. Every other tag:
+`fill` / `label`. Radius `xs`. Tags wrap onto a new line through `FlowRow` rather
+than shrinking.
+
+**Separators.** `separator`, only inside a card or list group, inset to the
+content.
+
+**Figures.** `FigureStrip` (tracking) and `FigureGrid` (profile, walk summary)
+sit on one card with separators between the cells.
+
+**Chart.** The profile's walk-range bars are `labelSecondary` with `xs` tops.
+Month labels are `labelTertiary`.
+
+**Progress.** A capsule track in `fill` with an `accent` fill.
+
+**Avatars.** A `fill` disc with the walker's single character in
+`labelSecondary`. The signed-in walker's avatar takes `label` ink and a
+`separator` ring.
+
+**Circular icon button.** A back or dismiss control on an opaque page: a `fill`
+disc, no stroke. Controls over the map use `floatingSurface` instead.
 
 ---
 
-## 9. Rollout
+## 9. The map
 
-Step one proved the shape, material and dark-mode work on three screens —
-**Onboarding**, **Map discovery** (including pins, route lines and the sheet) and
-**Route detail** — against a neutral grey palette with a green accent.
+`Theme.Map` holds every colour and width the map draws; `RouteMapView` reads it
+and invents nothing.
 
-Step two does two things at once, because doing them separately would mean
-skinning eight screens twice:
+| Element | Treatment |
+|---|---|
+| Route line | `accent` at 95%, 2.6pt |
+| Casing under every line | light: black at 14%; dark: white at 20%; 7pt |
+| Walked line (tracking) | `accent`, 4.5pt |
+| Route ahead (tracking) | `accent` at 85%, 2.4pt, dashed 2/6 |
+| Draft line (builder) | `accent` at 85%, 2.2pt, dotted 1/5 |
+| Walker dot | `accent`, with an `accent` halo at 18% |
+| Pin | 34pt `surface` disc, 1.5pt `accent` ring, 12pt `accent` centre, soft shadow |
 
-1. **The palette becomes the theme** (§1, §2). Green stops being an accent on a
-   grey chassis and becomes the light: leaf-cast grounds, the three working
-   greens, the canopy wash, one warm colour spent once. Every neutral is
-   re-specified and all fifty contrast results are re-measured — four values in
-   this document exist because a first choice failed and was tuned until it did
-   not. The three step-one screens are re-touched so the whole app lands on one
-   system rather than two.
-2. **The remaining eight screens are converted** — Featured, Notes, Tracking,
-   Summary, Builder, Feed, Saved, Profile — and the compatibility aliases the
-   theme layer kept for them (`Theme.text`, `Theme.divider`, the remapped `Gold`
-   and `Neutral` ramps, `paperBackground()`) are deleted. The compiler is what
-   proves that migration is total: nothing referenced them by the time they went.
-
-What step two does **not** do is change any of §8. It is still a re-skin.
+The basemap is MapKit's own and follows the system appearance. MapKit offers no
+tile filter, and the app does not tint the basemap.
