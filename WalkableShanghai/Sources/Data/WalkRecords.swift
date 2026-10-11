@@ -91,8 +91,8 @@ final class DraftRoute {
 
 /// The tag vocabulary offered by the builder.
 ///
-/// A fixed set, unlike a route's free-text `tag1`/`tag2` from the catalogue:
-/// these are chosen by tapping, so they have to be enumerable and translatable.
+/// A fixed set: these are chosen by tapping, so they have to be enumerable
+/// and translatable.
 enum BuilderTag: String, CaseIterable, Identifiable, Sendable {
     case green, flat, night, loop
 

@@ -137,39 +137,37 @@ final class WalkStoreTests: XCTestCase {
         let store = WalkStore(container: try makeContainer())
         let draft = store.saveDraftRoute(name: "Evening loop", coordinates: line, tagKeys: ["green"])
 
-        let route = draft.asRoute(number: 6, authorName: "Ben Qiu", authorInitial: "邱")
+        let route = draft.asRoute(authorName: "Ben Qiu", authorInitial: "邱")
         XCTAssertEqual(route.id, draft.id)
-        XCTAssertEqual(route.number, 6)
         XCTAssertEqual(route.name(.english), "Evening loop")
         XCTAssertGreaterThan(route.km, 0, "a drawn route should have a real distance")
         XCTAssertEqual(route.points.count, 3)
-
-        // Its kicker and area must be real bilingual text, not raw keys leaking
-        // through from the string table.
-        XCTAssertFalse(route.kicker(.english).contains("builder."))
-        XCTAssertFalse(route.area(.chinese).contains("builder."))
-        XCTAssertNotEqual(route.kicker(.english), route.kicker(.chinese))
-        // One tag chosen, so the second is blank rather than a placeholder.
-        XCTAssertEqual(route.tag1(.english), "Green")
-        XCTAssertTrue(route.tag2(.english).isEmpty)
+        // Route tags come from the fixed list the developers own, so the
+        // walker's builder tags do not become route tags.
+        XCTAssertTrue(route.tags.isEmpty)
+        XCTAssertEqual(route.updatedAt, draft.createdAt)
         XCTAssertTrue(route.note(.english).isEmpty)
     }
 
-    func testDrawnRoutesAreNumberedAfterTheCatalogue() throws {
-        let store = WalkStore(container: try makeContainer())
-        let routeStore = RouteStore()
-        let bundledCount = routeStore.routes.count
+    func testDrawnRoutesFollowTheCatalogueAndAreMarkedMine() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let walks = WalkStore(container: container)
+        _ = walks.saveDraftRoute(
+            name: "Mine",
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 31.21, longitude: 121.43),
+                CLLocationCoordinate2D(latitude: 31.22, longitude: 121.44),
+            ],
+            tagKeys: []
+        )
+        let store = RouteStore()
+        let catalogueCount = store.routes.count
+        store.setDrawnRoutes(walks.draftRoutes, authorName: "Ben Qiu", authorInitial: "邱")
 
-        store.saveDraftRoute(name: "One", coordinates: line, tagKeys: [])
-        store.saveDraftRoute(name: "Two", coordinates: line, tagKeys: [])
-        routeStore.setDrawnRoutes(store.draftRoutes, authorName: "Ben Qiu", authorInitial: "邱")
-
-        XCTAssertEqual(routeStore.routes.count, bundledCount + 2)
-        XCTAssertEqual(routeStore.routes[bundledCount].number, bundledCount + 1)
-        XCTAssertEqual(routeStore.routes[bundledCount + 1].number, bundledCount + 2)
-        // And a drawn route is reachable by id like any other.
-        let drawnId = try XCTUnwrap(store.draftRoutes.first?.id)
-        XCTAssertNotNil(routeStore.route(id: drawnId))
+        XCTAssertEqual(store.routes.count, catalogueCount + 1)
+        let drawn = try XCTUnwrap(store.routes.last)
+        XCTAssertEqual(store.mineRouteIds, [drawn.id])
+        XCTAssertTrue(drawn.tags.isEmpty)
     }
 
     func testTheCatalogueStillResolvesAfterMerging() throws {

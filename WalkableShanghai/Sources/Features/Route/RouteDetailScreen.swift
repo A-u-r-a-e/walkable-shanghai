@@ -90,36 +90,15 @@ struct RouteDetailScreen: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Space.s3) {
-                    Text(route.kicker(language))
-                        .sectionLabel()
-
                     Text(route.name(language))
                         .font(Typography.title)
                         .foregroundStyle(Theme.label)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("route-detail-name")
 
-                    // Three tags, each carrying a different kind of fact, so
-                    // each gets a different weight: the route's character, when
-                    // to walk it, and where it is.
-                    FlowRow(spacing: Theme.Space.s2) {
-                        // A drawn route may carry none, one or two tags, so
-                        // empty ones are dropped rather than shown as blanks.
-                        if !route.tag1(language).isEmpty {
-                            TagChip(text: route.tag1(language), style: .neutral)
-                        }
-                        if !route.tag2(language).isEmpty {
-                            TagChip(text: route.tag2(language), style: .neutral)
-                        }
-                        TagChip(text: route.area(language), style: .neutral)
-                    }
-
                     FigureStrip(figures: [
                         (String(route.km), "unit.km".localized(language), false),
                         (String(route.minutes), "unit.min".localized(language), false),
-                        // Zero dead ends is the achievement this app exists to
-                        // report, so it is the one figure that gets the accent.
-                        (String(route.breaks), "unit.deadEnds".localized(language), route.breaks == 0),
                     ])
 
                     if !route.note(language).isEmpty {
@@ -228,8 +207,7 @@ struct RouteDetailScreen: View {
     private func credit(route: Route, language: AppLanguage) -> some View {
         HStack(spacing: Theme.Space.s2) {
             AvatarInitial(initial: route.authorInitial, size: 30)
-            Text("route.credit".localized(language, route.authorName,
-                                  "route.walkCount".localized(language, count: route.walkCount)))
+            Text(route.authorName)
                 .font(Typography.meta)
                 .foregroundStyle(Theme.labelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -264,9 +242,9 @@ struct RouteDetailScreen: View {
         }
     }
 
-    /// What gets shared: the route's name and the three figures that make it
-    /// worth walking. Sent in the language the walker is reading, because the
-    /// person they are sending it to is probably reading the same one.
+    /// What gets shared: the route's name, its distance and its time. Sent in
+    /// the language the walker is reading, because the person they are
+    /// sending it to is probably reading the same one.
     ///
     /// No link, because there is nowhere to link to yet. Saying so by leaving
     /// it out is better than inventing a URL that will not resolve.
@@ -275,8 +253,7 @@ struct RouteDetailScreen: View {
             language,
             route.name(language),
             figureText(route.km),
-            String(route.minutes),
-            "route.deadEndCount".localized(language, count: route.breaks)
+            String(route.minutes)
         )
     }
 

@@ -44,7 +44,6 @@ struct DesignSystemGalleryView: View {
                     FigureStrip(figures: [
                         ("3.4", "unit.km".localized(language), false),
                         ("52", "unit.min".localized(language), false),
-                        ("0", "unit.deadEnds".localized(language), true),
                     ])
                 }
 
@@ -80,12 +79,11 @@ struct DesignSystemGalleryView: View {
                         let rows = Array(store.routes.prefix(3))
                         ForEach(Array(rows.enumerated()), id: \.element.id) { index, route in
                             RouteRow(
-                                number: route.number,
                                 name: route.name(language),
                                 detail: detail(for: route, language: language)
                             )
                             if index < rows.count - 1 {
-                                SeparatorRule(inset: 18 + Theme.Space.s3)
+                                SeparatorRule()
                             }
                         }
                     }
@@ -119,7 +117,7 @@ struct DesignSystemGalleryView: View {
     private func detail(for route: Route, language: AppLanguage) -> String {
         let km = "unit.km".localized(language)
         let min = "unit.min".localized(language)
-        return "\(route.km) \(km) · \(route.minutes) \(min) · \(route.area(language))"
+        return "\(route.km) \(km) · \(route.minutes) \(min)"
     }
 
     private func section<Content: View>(

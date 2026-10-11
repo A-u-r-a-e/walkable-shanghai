@@ -43,12 +43,11 @@ final class OfflineTests: XCTestCase {
         let source = try catalogue()
         var route = try XCTUnwrap(source.route(id: "wukang"))
         route = Route(
-            id: route.id, number: route.number, km: route.km, minutes: route.minutes,
-            breaks: route.breaks, name: route.name, area: route.area, kicker: route.kicker,
-            tag1: route.tag1, tag2: route.tag2, note: route.note,
+            id: route.id, km: route.km, minutes: route.minutes,
+            name: route.name, note: route.note,
             authorName: route.authorName, authorInitial: route.authorInitial,
-            walkCount: route.walkCount, downloadSize: route.downloadSize,
-            points: [], pin: route.pin, isFeatured: false
+            tags: route.tags, updatedAt: route.updatedAt,
+            points: [], pin: route.pin
         )
         XCTAssertNil(RouteImageRenderer.pngData(for: route, size: CGSize(width: 100, height: 100)))
     }

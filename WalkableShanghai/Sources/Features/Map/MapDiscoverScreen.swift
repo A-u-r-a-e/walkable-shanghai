@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Composed natively from the Classical tokens rather than ported from the
 /// mockup's layout. The functional brief is the mockup's: a full-bleed map with
-/// a numbered pin per route, a filter across the top, a record button, and a
+/// a pin per route, a filter across the top, a record button, and a
 /// two-height sheet listing the routes currently in view.
 ///
 /// The sheet is built by hand rather than with `.presentationDetents`, for two
@@ -198,7 +198,6 @@ struct MapDiscoverScreen: View {
                                 selectedRouteId = route.id
                             } label: {
                                 RouteRow(
-                                    number: route.number,
                                     name: route.name(language),
                                     detail: detailLine(for: route, language: language)
                                 )
@@ -278,7 +277,7 @@ struct MapDiscoverScreen: View {
     private func detailLine(for route: Route, language: AppLanguage) -> String {
         let km = "unit.km".localized(language)
         let minutes = "unit.min".localized(language)
-        return "\(route.km) \(km) · \(route.minutes) \(minutes) · \(route.area(language))"
+        return "\(route.km) \(km) · \(route.minutes) \(minutes)"
     }
 }
 

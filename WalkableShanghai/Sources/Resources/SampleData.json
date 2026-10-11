@@ -1,31 +1,13 @@
 {
-  "_comment": "Bundled sample catalogue, extracted verbatim from the design mockup's inline script (routes, commentData, postData, collections). This is the ONLY place placeholder content lives — no screen hardcodes strings. When a backend arrives it replaces this file behind the repository protocols; nothing in the views changes. Two deliberate departures from the mockup are noted inline below.",
+  "_comment": "Bundled sample catalogue: the ONLY place placeholder content lives, and what a backend replaces behind the repository protocols. Each route carries tags from the fixed RouteTag list (featured, popular) in display order and an updatedAt calendar date (yyyy-MM-dd, Shanghai time) for when its line or description last changed.",
   "routes": [
     {
       "id": "wukang",
-      "number": 1,
       "km": 3.4,
       "minutes": 52,
-      "breaks": 0,
       "name": {
         "en": "Wukang Road & the Concession Lanes",
         "zh": "武康路与法租界弄堂"
-      },
-      "area": {
-        "en": "Xuhui",
-        "zh": "徐汇"
-      },
-      "kicker": {
-        "en": "Featured route",
-        "zh": "本月精选"
-      },
-      "tag1": {
-        "en": "Plane trees, unbroken",
-        "zh": "梧桐蔽日 · 全程连续"
-      },
-      "tag2": {
-        "en": "Morning",
-        "zh": "晨间"
       },
       "note": {
         "en": "Shade for the whole length and no arterial crossing. South to north the lanes off Hunan Road open before nine; the north end returns you to Huaihai Road through Ferguson Lane.",
@@ -33,8 +15,6 @@
       },
       "authorName": "张沁",
       "authorInitial": "沁",
-      "walkCount": 9,
-      "downloadSize": "18 MB",
       "points": [
         {
           "lat": 31.2103,
@@ -77,33 +57,19 @@
         "lat": 31.2138,
         "lng": 121.436
       },
-      "isFeatured": true
+      "tags": [
+        "featured",
+        "popular"
+      ],
+      "updatedAt": "2026-10-03"
     },
     {
       "id": "creek",
-      "number": 2,
       "km": 4.8,
       "minutes": 70,
-      "breaks": 1,
       "name": {
         "en": "Suzhou Creek, East Bank",
         "zh": "苏州河东段"
-      },
-      "area": {
-        "en": "Hongkou",
-        "zh": "虹口"
-      },
-      "kicker": {
-        "en": "Word of mouth",
-        "zh": "口耳相传"
-      },
-      "tag1": {
-        "en": "Water the whole way",
-        "zh": "一路沿水"
-      },
-      "tag2": {
-        "en": "Evening",
-        "zh": "傍晚"
       },
       "note": {
         "en": "Continuous promenade from Waibaidu Bridge west, with one break at the Wuzhen Road works where you cross inland for two hundred metres. Benches every few hundred paces.",
@@ -111,8 +77,6 @@
       },
       "authorName": "林小雨",
       "authorInitial": "雨",
-      "walkCount": 4,
-      "downloadSize": "24 MB",
       "points": [
         {
           "lat": 31.2456,
@@ -143,33 +107,18 @@
         "lat": 31.2462,
         "lng": 121.476
       },
-      "isFeatured": false
+      "tags": [
+        "popular"
+      ],
+      "updatedAt": "2026-09-27"
     },
     {
       "id": "fuxing",
-      "number": 3,
       "km": 2.1,
       "minutes": 32,
-      "breaks": 0,
       "name": {
         "en": "Fuxing Park to Xintiandi",
         "zh": "复兴公园至新天地"
-      },
-      "area": {
-        "en": "Huangpu",
-        "zh": "黄浦"
-      },
-      "kicker": {
-        "en": "Short walk",
-        "zh": "短途"
-      },
-      "tag1": {
-        "en": "Flat, lit at night",
-        "zh": "平坦 · 夜有灯"
-      },
-      "tag2": {
-        "en": "Any hour",
-        "zh": "全天"
       },
       "note": {
         "en": "The reliable after-work loop. Park perimeter, then the lanes to Xintiandi; walk it twice over if you want an hour, which is what most people here do.",
@@ -177,8 +126,6 @@
       },
       "authorName": "Ben Qiu",
       "authorInitial": "邱",
-      "walkCount": 12,
-      "downloadSize": "11 MB",
       "points": [
         {
           "lat": 31.2199,
@@ -205,33 +152,16 @@
         "lat": 31.2222,
         "lng": 121.4708
       },
-      "isFeatured": false
+      "tags": [],
+      "updatedAt": "2026-09-18"
     },
     {
       "id": "bund",
-      "number": 4,
       "km": 2.9,
       "minutes": 45,
-      "breaks": 2,
       "name": {
         "en": "The Bund to Yuyuan",
         "zh": "外滩至豫园"
-      },
-      "area": {
-        "en": "Huangpu",
-        "zh": "黄浦"
-      },
-      "kicker": {
-        "en": "Word of mouth",
-        "zh": "口耳相传"
-      },
-      "tag1": {
-        "en": "Crowded after ten",
-        "zh": "十点后拥挤"
-      },
-      "tag2": {
-        "en": "Early",
-        "zh": "清晨"
       },
       "note": {
         "en": "Worth it before eight in the morning. Two forced detours around the tunnel ramps south of Yan'an Road are marked on the line.",
@@ -239,8 +169,6 @@
       },
       "authorName": "M. Lau",
       "authorInitial": "M",
-      "walkCount": 6,
-      "downloadSize": "15 MB",
       "points": [
         {
           "lat": 31.2385,
@@ -267,33 +195,16 @@
         "lat": 31.2325,
         "lng": 121.4906
       },
-      "isFeatured": false
+      "tags": [],
+      "updatedAt": "2026-10-08"
     },
     {
       "id": "century",
-      "number": 5,
       "km": 5.6,
       "minutes": 80,
-      "breaks": 0,
       "name": {
         "en": "Century Park Outer Loop",
         "zh": "世纪公园外环"
-      },
-      "area": {
-        "en": "Pudong",
-        "zh": "浦东"
-      },
-      "kicker": {
-        "en": "Long walk",
-        "zh": "长途"
-      },
-      "tag1": {
-        "en": "No road crossings",
-        "zh": "无路口穿越"
-      },
-      "tag2": {
-        "en": "Weekend",
-        "zh": "周末"
       },
       "note": {
         "en": "The longest uninterrupted walk in the collection: one closed loop, no traffic, gravel underfoot for most of it. Start at the north gate to end near the metro.",
@@ -301,8 +212,6 @@
       },
       "authorName": "沪上散步",
       "authorInitial": "沪",
-      "walkCount": 3,
-      "downloadSize": "29 MB",
       "points": [
         {
           "lat": 31.2246,
@@ -337,7 +246,8 @@
         "lat": 31.2208,
         "lng": 121.5487
       },
-      "isFeatured": false
+      "tags": [],
+      "updatedAt": "2026-08-30"
     }
   ],
   "_profileNote": "Departure 2 from the mockup: no statistics are seeded. The mockup hardcoded 34 walks / 118.6 km / 8.2 longest / 5 routes added; PLAN.md Phase 8 computes all four from stored walks, so seeding them here would only create numbers to contradict later.",

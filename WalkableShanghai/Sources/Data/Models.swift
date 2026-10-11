@@ -12,44 +12,30 @@ struct Coordinate: Codable, Hashable, Sendable {
     }
 }
 
-/// The core entity. A walk someone has already done end to end and published.
-///
-/// The three figures on its face — `km`, `minutes`, `breaks` — are the app's
-/// whole proposition. `breaks` is the distinguishing one: how many times the
-/// walk is forced to stop or detour.
+/// The core entity: a walk someone has done end to end and published.
 struct Route: Codable, Identifiable, Hashable, Sendable {
     let id: String
-    /// Display order, and the number drawn inside the map pin.
-    let number: Int
     let km: Double
     let minutes: Int
-    /// Dead ends: places the walk breaks off. Zero is the thing to aim for.
-    let breaks: Int
 
     let name: LocalizedText
-    let area: LocalizedText
-    let kicker: LocalizedText
-    /// A route-quality tag ("Plane trees, unbroken") and a time-of-day tag
-    /// ("Morning"). Free text per route, not a controlled vocabulary.
-    let tag1: LocalizedText
-    let tag2: LocalizedText
+    /// The description shown on the route card.
     let note: LocalizedText
 
     let authorName: String
     /// One character, drawn in the avatar circle.
     let authorInitial: String
-    let walkCount: Int
-    /// A display string on the route, not a computed download size. It becomes
-    /// real in Phase 7 or gets labelled honestly.
-    let downloadSize: String
+
+    /// From the fixed list in `RouteTag`. Order is display order.
+    let tags: [RouteTag]
+    /// When the route's line or description last changed.
+    let updatedAt: Date
 
     let points: [Coordinate]
-    /// Where the discover marker sits — not necessarily on the line.
+    /// Where the map pin sits — not necessarily on the line.
     let pin: Coordinate
 
-    /// Drives the Featured screen. In the source mockup that screen was
-    /// hardcoded to one route; this flag replaces the hardcoding.
-    let isFeatured: Bool
+    var isFeatured: Bool { tags.contains(.featured) }
 }
 
 /// Seed identity for the signed-in walker.

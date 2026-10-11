@@ -28,15 +28,29 @@ final class SampleDataTests: XCTestCase {
             XCTAssertFalse(route.name.zh.isEmpty, "\(route.id) is missing a Chinese name")
             XCTAssertFalse(route.note.en.isEmpty, "\(route.id) is missing an English note")
             XCTAssertFalse(route.note.zh.isEmpty, "\(route.id) is missing a Chinese note")
-            XCTAssertFalse(route.area.en.isEmpty, "\(route.id) is missing an English area")
-            XCTAssertFalse(route.area.zh.isEmpty, "\(route.id) is missing a Chinese area")
         }
     }
 
-    func testExactlyOneFeaturedRoute() {
+    func testTagsComeFromTheFixedListAndFeaturedIsATag() throws {
+        let data = try SampleDataLoader.load()
         let featured = data.routes.filter(\.isFeatured)
-        XCTAssertEqual(featured.count, 1, "the Featured screen shows exactly one route")
-        XCTAssertEqual(featured.first?.id, "wukang")
+        XCTAssertEqual(featured.map(\.id), ["wukang"])
+        XCTAssertTrue(featured[0].tags.contains(.featured))
+    }
+
+    func testEveryRouteHasAnUpdatedDate() throws {
+        let data = try SampleDataLoader.load()
+        let calendar = Calendar(identifier: .gregorian)
+        for route in data.routes {
+            XCTAssertGreaterThanOrEqual(calendar.component(.year, from: route.updatedAt), 2026, route.id)
+        }
+    }
+
+    func testEveryTagHasBothLanguages() {
+        for tag in RouteTag.allCases {
+            XCTAssertNotEqual(L10n.string(tag.localizationKey, .english), tag.localizationKey)
+            XCTAssertNotEqual(L10n.string(tag.localizationKey, .chinese), tag.localizationKey)
+        }
     }
 
     func testEveryRouteHasDrawableGeometry() {

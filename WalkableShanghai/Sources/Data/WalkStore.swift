@@ -123,56 +123,29 @@ final class WalkStore {
 extension DraftRoute {
 
     /// Presents a drawn route as an ordinary `Route`, so the map, the sheet and
-    /// route detail need no notion of where a route came from.
+    /// the route card need no notion of where a route came from.
     ///
-    /// The fields the catalogue supplies editorially — a kicker, two character
-    /// tags, a walker's note — are left as the walker's own tags or blank
-    /// rather than invented. A route you drew this morning has no note from
-    /// anyone yet, and pretending otherwise would be filling the screen with
-    /// fiction.
-    func asRoute(number: Int, authorName: String, authorInitial: String) -> Route {
+    /// The walker's note is left blank rather than invented, and the route
+    /// carries no tags: tags come from the fixed list the developers own.
+    func asRoute(authorName: String, authorInitial: String) -> Route {
         let line = coordinates
         let km = ((RouteGeometry.totalMeters(line) / 1000) * 10).rounded() / 10
         // 12 minutes per kilometre: an unhurried city walking pace, and the
         // same figure the builder shows while drawing.
         let minutes = Int((km * 12).rounded())
 
-        // Resolved into both languages here rather than stored as keys.
-        // `LocalizedText` carries content, not resource names — a key left in
-        // it would render literally as "builder.yourRoute" on screen.
-        func bilingual(_ key: String) -> LocalizedText {
-            LocalizedText(en: L10n.string(key, .english), zh: L10n.string(key, .chinese))
-        }
-        let chosen = tagKeys.compactMap { BuilderTag(rawValue: $0) }
-        // Empty rather than a placeholder chip when fewer than two tags were
-        // picked; the detail screen skips empty tags.
-        let empty = LocalizedText(en: "", zh: "")
-
         return Route(
             id: id,
-            number: number,
             km: km,
             minutes: minutes,
-            // A drawn route has not been walked yet, so its dead ends are
-            // unknown. Zero is a claim this app takes seriously - it is the
-            // whole proposition - so it is not an honest default here. Until
-            // the route is walked, this reports nothing rather than a zero it
-            // has not earned.
-            breaks: 0,
             name: LocalizedText(en: name, zh: name),
-            area: bilingual("builder.yourRoute.area"),
-            kicker: bilingual("builder.yourRoute"),
-            tag1: chosen.first.map { bilingual($0.localizationKey) } ?? empty,
-            tag2: chosen.dropFirst().first.map { bilingual($0.localizationKey) } ?? empty,
-            note: empty,
+            note: LocalizedText(en: "", zh: ""),
             authorName: authorName,
             authorInitial: authorInitial,
-            walkCount: 0,
-            downloadSize: "\u{2014}",
+            tags: [],
+            updatedAt: createdAt,
             points: line.map { Coordinate(lat: $0.latitude, lng: $0.longitude) },
-            pin: line.first.map { Coordinate(lat: $0.latitude, lng: $0.longitude) }
-                ?? Coordinate(lat: 31.2232, lng: 121.4680),
-            isFeatured: false
+            pin: Coordinate(lat: line.first?.latitude ?? 0, lng: line.first?.longitude ?? 0)
         )
     }
 }

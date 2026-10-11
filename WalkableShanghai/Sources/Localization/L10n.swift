@@ -82,13 +82,13 @@ extension String {
         L10n.string(self, language)
     }
 
-    /// `"placeholder.phase".localized(language, "5")` — for the few strings that
-    /// carry a value.
+    /// `"route.share.message".localized(language, name, km, minutes)` — for the
+    /// few strings that carry a value.
     func localized(_ language: AppLanguage, _ arguments: CVarArg...) -> String {
         String(format: L10n.string(self, language), arguments: arguments)
     }
 
-    /// `"saved.count".localized(language, count: 1)` → "1 route", not "1 routes".
+    /// `"builder.points".localized(language, count: 1)` → "1 point", not "1 points".
     func localized(_ language: AppLanguage, count: Int) -> String {
         L10n.string(self, language, count: count)
     }

@@ -2,10 +2,10 @@ import Foundation
 
 /// A piece of *content* that exists in both languages at once.
 ///
-/// This is the important distinction in this app: route names, areas, kickers,
-/// tags, walker notes and comment bodies are data, and every record carries
-/// both an English and a Chinese version. They are not interface strings and do
-/// not belong in the String Catalog — a route added next year will arrive from
+/// This is the important distinction in this app: route names and walker
+/// notes are data, and every record carries both an English and a Chinese
+/// version. They are not interface strings and do not belong in the String
+/// Catalog — a route added next year will arrive from
 /// the server with both fields filled in, not from a `.xcstrings` file.
 ///
 /// In the source mockup these appeared as paired `…En` / `…Zh` keys.

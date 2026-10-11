@@ -32,8 +32,8 @@ struct SeparatorColumn: View {
 
 // MARK: - Figures
 
-/// One number and its label. The atom of the app's honesty: distance, duration,
-/// dead ends.
+/// One number and its label. The atom of the app's honesty: distance and
+/// duration.
 struct Figure: View {
     let value: String
     let label: String
@@ -387,21 +387,15 @@ struct CircularIconButton: View {
 
 // MARK: - Route row
 
-/// One route in a list: its number, its name, and the three facts that decide
-/// whether you want it.
+/// One route in a list: its name, and the facts that decide whether you want
+/// it.
 struct RouteRow: View {
-    let number: Int
     let name: String
     let detail: String
     var showsChevron: Bool = true
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Space.s3) {
-            Text("\(number)")
-                .font(Typography.figure(.subheadline))
-                .foregroundStyle(Theme.accent)
-                .frame(minWidth: 18, alignment: .leading)
-
             VStack(alignment: .leading, spacing: Theme.Space.s1) {
                 Text(name)
                     .font(Typography.rowTitle)

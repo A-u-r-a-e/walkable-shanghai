@@ -108,14 +108,15 @@ final class UserStateTests: XCTestCase {
 
     // MARK: - Featured route
 
-    /// The Featured screen resolves its route from the flag, not from anything
-    /// stored beside the editorial. If that ever stops being true, this fails.
-    func testFeaturedRouteComesFromTheFlag() throws {
+    /// The featured route is resolved from the route's `featured` tag, not
+    /// from anything stored beside the catalogue. If that ever stops being
+    /// true, this fails.
+    func testFeaturedRouteComesFromTheTag() throws {
         let data = try loadCatalogue()
         let source = BundledDataSource(data: data)
 
         let flagged = data.routes.filter(\.isFeatured)
-        XCTAssertEqual(flagged.count, 1, "exactly one route should carry isFeatured")
+        XCTAssertEqual(flagged.count, 1, "exactly one route should carry the featured tag")
         XCTAssertEqual(source.featuredRoute()?.id, flagged.first?.id)
     }
 }

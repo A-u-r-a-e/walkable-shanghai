@@ -38,7 +38,7 @@ enum Typography {
     /// which a Font alone cannot carry.
     static let label = Font.system(.caption, design: .default, weight: .semibold)
 
-    /// A large figure — kilometres, minutes, dead ends. Always tabular, so
+    /// A large figure — kilometres, minutes, pace. Always tabular, so
     /// columns of numbers line up and a ticking clock does not jitter.
     static func figure(_ style: Font.TextStyle = .title) -> Font {
         Font.system(style, design: .default, weight: .medium).monospacedDigit()

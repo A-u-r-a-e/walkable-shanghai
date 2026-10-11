@@ -844,58 +844,6 @@
         }
       }
     },
-    "route.credit": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Added by %@ · %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由 %@ 添加 · %@"
-          }
-        }
-      }
-    },
-    "route.deadEndCount": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld dead end"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld dead ends"
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "plural": {
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld 个断点"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "route.download": {
       "comment": "Offline toggle, not yet downloaded.",
       "extractionState": "manual",
@@ -1009,13 +957,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ — %@ km · %@ min · %@. From Walkable Shanghai."
+            "value": "%1$@ — %2$@ km, %3$@ min. On Walkable Shanghai."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ —— %@ 公里 · %@ 分钟 · %@。来自「可步行的上海」。"
+            "value": "%1$@ —— %2$@ 公里，%3$@ 分钟。来自 Walkable Shanghai。"
           }
         }
       }
@@ -1033,41 +981,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "开始步行"
-          }
-        }
-      }
-    },
-    "route.walkCount": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "walked %lld time"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "walked %lld times"
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "plural": {
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "已走 %lld 次"
-                }
-              }
-            }
           }
         }
       }
@@ -1380,20 +1293,38 @@
         }
       }
     },
-    "track.deadEndsAhead": {
-      "comment": "Static for now - routes do not carry break points as data yet.",
+    "tag.featured": {
+      "comment": "Route tag chosen by the editors.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No dead ends ahead"
+            "value": "Featured"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "前方无断点"
+            "value": "精选"
+          }
+        }
+      }
+    },
+    "tag.popular": {
+      "comment": "Route tag chosen by the editors.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "热门"
           }
         }
       }
@@ -1566,23 +1497,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "步行完成"
-          }
-        }
-      }
-    },
-    "unit.deadEnds": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "dead ends"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "断点"
           }
         }
       }

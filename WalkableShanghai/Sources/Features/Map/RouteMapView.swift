@@ -15,7 +15,7 @@ import MapKit
 struct RouteMapView: UIViewRepresentable {
 
     enum Mode {
-        /// Every listed route drawn at once, with a numbered pin each.
+        /// Every listed route drawn at once, with a pin each.
         case discover
         /// One route, framed. Phase 3.
         case detail
@@ -192,7 +192,7 @@ struct RouteMapView: UIViewRepresentable {
 
         if mode == .discover {
             map.addAnnotations(routes.map {
-                RoutePinAnnotation(routeId: $0.id, number: $0.number, coordinate: $0.pin.clLocationCoordinate)
+                RoutePinAnnotation(routeId: $0.id, coordinate: $0.pin.clLocationCoordinate)
             })
         }
     }
@@ -356,7 +356,7 @@ struct RouteMapView: UIViewRepresentable {
                 withIdentifier: RoutePinView.reuseIdentifier,
                 for: pin
             ) as? RoutePinView
-            view?.configure(number: pin.number, routeName: pin.title ?? "")
+            view?.configure(routeId: pin.routeId, routeName: pin.title ?? "")
             return view
         }
 
@@ -385,19 +385,18 @@ final class RoutePolyline: MKPolyline {
 
 final class RoutePinAnnotation: NSObject, MKAnnotation {
     let routeId: String
-    let number: Int
     let coordinate: CLLocationCoordinate2D
     var title: String?
 
-    init(routeId: String, number: Int, coordinate: CLLocationCoordinate2D, title: String? = nil) {
+    init(routeId: String, coordinate: CLLocationCoordinate2D, title: String? = nil) {
         self.routeId = routeId
-        self.number = number
         self.coordinate = coordinate
         self.title = title
     }
 }
 
-/// The numbered disc that marks a route on the discover map.
+/// The disc that marks a route on the discover map: a plain accent dot on the
+/// card surface.
 ///
 /// Built by hand rather than with `MKMarkerAnnotationView` because the system
 /// marker is a filled teardrop in Apple's red, which would be the only thing on
@@ -406,7 +405,7 @@ final class RoutePinView: MKAnnotationView {
 
     static let reuseIdentifier = "RoutePin"
 
-    private let label = UILabel()
+    private let dot = UIView()
     private let disc = UIView()
 
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
@@ -430,24 +429,21 @@ final class RoutePinView: MKAnnotationView {
         disc.isUserInteractionEnabled = false
         addSubview(disc)
 
-        label.frame = bounds
-        label.textAlignment = .center
-        // Tabular figures, so a 1 and a 4 sit identically inside the disc.
-        label.font = .monospacedDigitSystemFont(ofSize: 15, weight: .medium)
-        label.textColor = UIColor(Theme.accent)
-        label.isUserInteractionEnabled = false
-        addSubview(label)
+        dot.frame = CGRect(x: 11, y: 11, width: 12, height: 12)
+        dot.backgroundColor = UIColor(Theme.accent)
+        dot.layer.cornerRadius = 6
+        dot.isUserInteractionEnabled = false
+        addSubview(dot)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(number: Int, routeName: String) {
-        label.text = "\(number)"
+    func configure(routeId: String, routeName: String) {
         isAccessibilityElement = true
         accessibilityTraits = .button
-        accessibilityLabel = routeName.isEmpty ? "\(number)" : routeName
-        accessibilityIdentifier = "route-pin-\(number)"
+        accessibilityLabel = routeName.isEmpty ? routeId : routeName
+        accessibilityIdentifier = "route-pin-\(routeId)"
     }
 }
 

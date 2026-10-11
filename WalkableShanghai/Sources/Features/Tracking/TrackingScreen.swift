@@ -106,8 +106,6 @@ struct TrackingScreen: View {
 
             progressBar(language: language)
 
-            deadEndsAhead(language: language)
-
             HStack(spacing: Theme.Space.s2) {
                 Button((session.state == .running ? "track.pause" : "track.resume").localized(language)) {
                     session.state == .running ? session.pause() : session.resume()
@@ -162,24 +160,5 @@ struct TrackingScreen: View {
             .frame(height: 6)
             .accessibilityHidden(true)
         }
-    }
-
-    /// Static "none" for now. Routes do not carry break points as data yet, and
-    /// PLAN.md keeps this honest placeholder rather than inventing a warning
-    /// the catalogue cannot support.
-    private func deadEndsAhead(language: AppLanguage) -> some View {
-        HStack(spacing: Theme.Space.s2) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.label)
-            Text("track.deadEndsAhead".localized(language))
-                .font(Typography.meta)
-                .foregroundStyle(Theme.label)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, Theme.Space.s3)
-        .padding(.vertical, Theme.Space.s2)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.fill, in: Theme.shape(Theme.Radius.sm))
     }
 }

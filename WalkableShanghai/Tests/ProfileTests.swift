@@ -124,9 +124,6 @@ final class ProfileTests: XCTestCase {
     func testCountedStringsUseTheRightPluralForm() {
         XCTAssertEqual("builder.points".localized(.english, count: 1), "1 point")
         XCTAssertEqual("builder.points".localized(.english, count: 5), "5 points")
-
-        XCTAssertEqual("route.walkCount".localized(.english, count: 1), "walked 1 time")
-        XCTAssertEqual("route.walkCount".localized(.english, count: 9), "walked 9 times")
     }
 
     /// The plural halves are composed back into the sentences that carry them,
@@ -136,25 +133,18 @@ final class ProfileTests: XCTestCase {
             .english, "builder.points".localized(.english, count: 1), "0.4"
         )
         XCTAssertEqual(tally, "1 point · 0.4 km")
-
-        let credit = "route.credit".localized(
-            .english, "M. Lau", "route.walkCount".localized(.english, count: 1)
-        )
-        XCTAssertEqual(credit, "Added by M. Lau · walked 1 time")
     }
 
     func testTheShareMessageCarriesTheRouteAndItsFigures() {
-        let message = "route.share.message".localized(
-            .english, "Wukang Road & the Concession Lanes", "3.4", "52",
-            "route.deadEndCount".localized(.english, count: 0)
-        )
-        XCTAssertEqual(
-            message,
-            "Wukang Road & the Concession Lanes — 3.4 km · 52 min · 0 dead ends. From Walkable Shanghai."
-        )
-        // The figure this app exists to report gets its plural right too.
-        XCTAssertEqual("route.deadEndCount".localized(.english, count: 1), "1 dead end")
-        XCTAssertEqual("route.deadEndCount".localized(.english, count: 2), "2 dead ends")
-        XCTAssertEqual("route.deadEndCount".localized(.chinese, count: 1), "1 个断点")
+        for language in [AppLanguage.english, .chinese] {
+            let message = "route.share.message".localized(
+                language, "Wukang Road & the Concession Lanes", "3.4", "52"
+            )
+            XCTAssertTrue(message.contains("Wukang Road & the Concession Lanes"), message)
+            XCTAssertTrue(message.contains("3.4"), message)
+            XCTAssertTrue(message.contains("52"), message)
+            XCTAssertFalse(message.contains("dead end"), message)
+            XCTAssertFalse(message.contains("断点"), message)
+        }
     }
 }

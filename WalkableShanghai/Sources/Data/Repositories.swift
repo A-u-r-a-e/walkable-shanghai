@@ -32,7 +32,7 @@ struct BundledDataSource: RouteRepository {
     // MARK: RouteRepository
 
     func allRoutes() -> [Route] {
-        data.routes.sorted { $0.number < $1.number }
+        data.routes
     }
 
     func route(id: String) -> Route? {
@@ -62,6 +62,19 @@ enum SampleDataLoader {
         }
     }
 
+    /// The one decoder for catalogue JSON. Dates are ISO 8601 calendar dates
+    /// ("2026-10-03") so the file stays readable.
+    static var decoder: JSONDecoder {
+        let decoder = JSONDecoder()
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        formatter.dateFormat = "yyyy-MM-dd"
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        return decoder
+    }
+
     /// Loads and decodes the bundled catalogue.
     ///
     /// Throws rather than returning an optional: a missing or malformed bundled
@@ -73,7 +86,7 @@ enum SampleDataLoader {
         }
         do {
             let raw = try Data(contentsOf: url)
-            return try JSONDecoder().decode(SampleData.self, from: raw)
+            return try decoder.decode(SampleData.self, from: raw)
         } catch {
             throw LoadError.decodingFailed(error)
         }
@@ -94,6 +107,7 @@ final class RouteStore {
     /// and route detail need no notion of origin.
     private(set) var routes: [Route] = []
     private(set) var loadFailure: String?
+    private(set) var mineRouteIds: Set<String> = []
 
     @ObservationIgnored private var source: BundledDataSource?
     @ObservationIgnored private var bundledRoutes: [Route] = []
@@ -110,20 +124,13 @@ final class RouteStore {
         }
     }
 
-    /// Folds the walker's drawn routes in after the catalogue, numbering them
-    /// on from where the catalogue stops so the map pins stay in order.
+    /// Folds the walker's drawn routes in after the catalogue, oldest first.
     func setDrawnRoutes(_ drafts: [DraftRoute], authorName: String, authorInitial: String) {
         let drawn = drafts
             .sorted { $0.createdAt < $1.createdAt }
-            .enumerated()
-            .map { index, draft in
-                draft.asRoute(
-                    number: bundledRoutes.count + index + 1,
-                    authorName: authorName,
-                    authorInitial: authorInitial
-                )
-            }
+            .map { $0.asRoute(authorName: authorName, authorInitial: authorInitial) }
         routes = bundledRoutes + drawn
+        mineRouteIds = Set(drawn.map(\.id))
     }
 
     /// Looks in the merged list, not just the catalogue, so a drawn route
