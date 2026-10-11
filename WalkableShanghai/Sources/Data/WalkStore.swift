@@ -80,12 +80,8 @@ final class WalkStore {
     }
 
     @discardableResult
-    func saveDraftRoute(
-        name: String,
-        coordinates: [CLLocationCoordinate2D],
-        tagKeys: [String]
-    ) -> DraftRoute {
-        let draft = DraftRoute(name: name, coordinates: coordinates, tagKeys: tagKeys)
+    func saveDraftRoute(name: String, coordinates: [CLLocationCoordinate2D]) -> DraftRoute {
+        let draft = DraftRoute(name: name, coordinates: coordinates)
         context.insert(draft)
         persist()
         reload()
@@ -145,7 +141,10 @@ extension DraftRoute {
             tags: [],
             updatedAt: createdAt,
             points: line.map { Coordinate(lat: $0.latitude, lng: $0.longitude) },
-            pin: Coordinate(lat: line.first?.latitude ?? 0, lng: line.first?.longitude ?? 0)
+            // A draft always has a line, but if one ever had no points its pin
+            // belongs in central Shanghai, not at 0,0 off the coast of Africa.
+            pin: line.first.map { Coordinate(lat: $0.latitude, lng: $0.longitude) }
+                ?? Coordinate(lat: 31.2232, lng: 121.4680)
         )
     }
 }

@@ -122,28 +122,27 @@ final class WalkStoreTests: XCTestCase {
         let container = try makeContainer()
 
         let first = WalkStore(container: container)
-        first.saveDraftRoute(name: "Evening loop", coordinates: line, tagKeys: ["green", "loop"])
+        first.saveDraftRoute(name: "Evening loop", coordinates: line)
 
         let reopened = WalkStore(container: container)
         XCTAssertEqual(reopened.draftRoutes.count, 1, "the drawn route did not survive a relaunch")
         let draft = try XCTUnwrap(reopened.draftRoutes.first)
         XCTAssertEqual(draft.name, "Evening loop")
         XCTAssertEqual(draft.coordinates.count, 3)
-        XCTAssertEqual(draft.tagKeys.sorted(), ["green", "loop"])
         XCTAssertEqual(draft.coordinates[1].latitude, line[1].latitude, accuracy: 0.00001)
     }
 
     func testADrawnRouteBecomesAnOrdinaryRoute() throws {
         let store = WalkStore(container: try makeContainer())
-        let draft = store.saveDraftRoute(name: "Evening loop", coordinates: line, tagKeys: ["green"])
+        let draft = store.saveDraftRoute(name: "Evening loop", coordinates: line)
 
         let route = draft.asRoute(authorName: "Ben Qiu", authorInitial: "邱")
         XCTAssertEqual(route.id, draft.id)
         XCTAssertEqual(route.name(.english), "Evening loop")
         XCTAssertGreaterThan(route.km, 0, "a drawn route should have a real distance")
         XCTAssertEqual(route.points.count, 3)
-        // Route tags come from the fixed list the developers own, so the
-        // walker's builder tags do not become route tags.
+        // Route tags come from the fixed list the developers own, so a
+        // walker's route carries none.
         XCTAssertTrue(route.tags.isEmpty)
         XCTAssertEqual(route.updatedAt, draft.createdAt)
         XCTAssertTrue(route.note(.english).isEmpty)
@@ -157,8 +156,7 @@ final class WalkStoreTests: XCTestCase {
             coordinates: [
                 CLLocationCoordinate2D(latitude: 31.21, longitude: 121.43),
                 CLLocationCoordinate2D(latitude: 31.22, longitude: 121.44),
-            ],
-            tagKeys: []
+            ]
         )
         let store = RouteStore()
         let catalogueCount = store.routes.count
@@ -173,7 +171,7 @@ final class WalkStoreTests: XCTestCase {
     func testTheCatalogueStillResolvesAfterMerging() throws {
         let routeStore = RouteStore()
         let store = WalkStore(container: try makeContainer())
-        store.saveDraftRoute(name: "Mine", coordinates: line, tagKeys: [])
+        store.saveDraftRoute(name: "Mine", coordinates: line)
         routeStore.setDrawnRoutes(store.draftRoutes, authorName: "x", authorInitial: "x")
 
         // Merging must not shadow the bundled routes.
@@ -181,16 +179,13 @@ final class WalkStoreTests: XCTestCase {
         XCTAssertEqual(routeStore.featuredRoute()?.id, "wukang")
     }
 
-    // MARK: - Builder tags
+    func testADrawnRouteWithNoPointsIsPinnedInCentralShanghai() throws {
+        let store = WalkStore(container: try makeContainer())
+        let draft = store.saveDraftRoute(name: "Empty", coordinates: [])
 
-    func testEveryBuilderTagIsBilingual() throws {
-        for tag in BuilderTag.allCases {
-            let en = L10n.string(tag.localizationKey, .english)
-            let zh = L10n.string(tag.localizationKey, .chinese)
-            XCTAssertFalse(en.contains("builder."), "\(tag) has no English string")
-            XCTAssertFalse(zh.contains("builder."), "\(tag) has no Chinese string")
-            XCTAssertNotEqual(en, zh, "\(tag) is not actually translated")
-        }
-        XCTAssertEqual(BuilderTag.allCases.count, 4)
+        // A pin at 0,0 would put the route in the Gulf of Guinea.
+        let route = draft.asRoute(authorName: "x", authorInitial: "x")
+        XCTAssertEqual(route.pin.lat, 31.2232, accuracy: 0.00001)
+        XCTAssertEqual(route.pin.lng, 121.4680, accuracy: 0.00001)
     }
 }

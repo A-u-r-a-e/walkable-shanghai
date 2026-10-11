@@ -156,74 +156,6 @@
         }
       }
     },
-    "builder.tag.flat": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Flat"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "平坦"
-          }
-        }
-      }
-    },
-    "builder.tag.green": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Green"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "绿意"
-          }
-        }
-      }
-    },
-    "builder.tag.loop": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loop"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "环线"
-          }
-        }
-      }
-    },
-    "builder.tag.night": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Night walk"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "夜行"
-          }
-        }
-      }
-    },
     "builder.tally": {
       "extractionState": "manual",
       "localizations": {
@@ -271,41 +203,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "未命名路线"
-          }
-        }
-      }
-    },
-    "builder.yourRoute": {
-      "comment": "Kicker on a route the walker drew themselves.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your route"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的路线"
-          }
-        }
-      }
-    },
-    "builder.yourRoute.area": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drawn by you"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自行绘制"
           }
         }
       }

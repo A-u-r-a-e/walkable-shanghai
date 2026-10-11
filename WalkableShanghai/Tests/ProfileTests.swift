@@ -108,7 +108,7 @@ final class ProfileTests: XCTestCase {
         store.record(routeId: "creek", startedAt: now.addingTimeInterval(-3600),
                      endedAt: now, distanceMeters: 8200, elapsedSeconds: 3600,
                      note: "", photo: nil)
-        store.saveDraftRoute(name: "Mine", coordinates: [], tagKeys: [])
+        store.saveDraftRoute(name: "Mine", coordinates: [])
 
         XCTAssertEqual(store.walkCount, 2)
         XCTAssertEqual(store.totalKm, 11.6, accuracy: 0.001)

@@ -62,40 +62,22 @@ final class DraftRoute {
     /// scalars directly; a `[Coordinate]` would need a transformer for no gain.
     var latitudes: [Double]
     var longitudes: [Double]
-    /// Tag keys, not display text, so a saved route re-reads correctly in the
-    /// other language.
-    var tagKeys: [String]
     var createdAt: Date
 
     init(
         id: String = "draft-\(UUID().uuidString.prefix(8))",
         name: String,
         coordinates: [CLLocationCoordinate2D],
-        tagKeys: [String],
         createdAt: Date = Date()
     ) {
         self.id = id
         self.name = name
         self.latitudes = coordinates.map(\.latitude)
         self.longitudes = coordinates.map(\.longitude)
-        self.tagKeys = tagKeys
         self.createdAt = createdAt
     }
 
     var coordinates: [CLLocationCoordinate2D] {
         zip(latitudes, longitudes).map { CLLocationCoordinate2D(latitude: $0, longitude: $1) }
     }
-}
-
-// MARK: - The four builder tags
-
-/// The tag vocabulary offered by the builder.
-///
-/// A fixed set: these are chosen by tapping, so they have to be enumerable
-/// and translatable.
-enum BuilderTag: String, CaseIterable, Identifiable, Sendable {
-    case green, flat, night, loop
-
-    var id: String { rawValue }
-    var localizationKey: String { "builder.tag.\(rawValue)" }
 }

@@ -15,7 +15,6 @@ struct RouteBuilderScreen: View {
 
     @State private var points: [CLLocationCoordinate2D] = []
     @State private var name = ""
-    @State private var chosenTags: Set<BuilderTag> = []
 
     var body: some View {
         let language = settings.language
@@ -86,37 +85,6 @@ struct RouteBuilderScreen: View {
                 .background(Theme.fill, in: Theme.shape(Theme.Radius.sm))
                 .accessibilityIdentifier("builder-name-field")
 
-            FlowRow(spacing: Theme.Space.s2) {
-                ForEach(BuilderTag.allCases) { tag in
-                    Button {
-                        if chosenTags.contains(tag) {
-                            chosenTags.remove(tag)
-                        } else {
-                            chosenTags.insert(tag)
-                        }
-                    } label: {
-                        // Chosen tags take an accent ring: a selected state is
-                        // one of the few places green belongs.
-                        TagChip(
-                            text: tag.localizationKey.localized(language),
-                            style: .neutral,
-                            // The one tag whose meaning the theme can carry.
-                            // Hidden from VoiceOver, so the chip still announces
-                            // exactly the word it always did.
-                            symbol: tag == .green ? "leaf" : nil
-                        )
-                        .overlay {
-                            if chosenTags.contains(tag) {
-                                Theme.shape(Theme.Radius.xs).strokeBorder(Theme.accent, lineWidth: 1.5)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("builder-tag-\(tag.rawValue)")
-                    .accessibilityAddTraits(chosenTags.contains(tag) ? [.isSelected] : [])
-                }
-            }
-
             HStack(spacing: Theme.Space.s2) {
                 Button("builder.undo".localized(language)) {
                     if !points.isEmpty { points.removeLast() }
@@ -156,11 +124,7 @@ struct RouteBuilderScreen: View {
             ? "builder.untitled".localized(settings.language)
             : trimmed
 
-        walks.saveDraftRoute(
-            name: finalName,
-            coordinates: points,
-            tagKeys: chosenTags.map(\.rawValue).sorted()
-        )
+        walks.saveDraftRoute(name: finalName, coordinates: points)
         // Fold it straight into the route list so it is on the map by the time
         // the builder closes.
         store.setDrawnRoutes(
