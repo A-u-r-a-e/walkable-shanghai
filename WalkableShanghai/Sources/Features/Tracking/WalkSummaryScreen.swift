@@ -4,9 +4,7 @@ import PhotosUI
 /// Screen 7 — what the walk came to.
 ///
 /// Replaces Phase 4's stub. The four figures are the finished session's real
-/// numbers, and the walk is written to SwiftData whichever button is pressed:
-/// "Post to feed" and "Keep it private" differ only in a flag. Losing a walk
-/// because someone did not want to share it would be the wrong trade.
+/// numbers, and Done writes the walk to SwiftData before unwinding to the map.
 struct WalkSummaryScreen: View {
 
     @Environment(AppSettings.self) private var settings
@@ -47,17 +45,11 @@ struct WalkSummaryScreen: View {
 
                 noteField(language: language)
 
-                Button("summary.post".localized(language)) {
-                    finish(isPosted: true)
+                Button("summary.done".localized(language)) {
+                    finish()
                 }
                 .buttonStyle(.primaryClassical)
-                .accessibilityIdentifier("post-to-feed-button")
-
-                Button("summary.private".localized(language)) {
-                    finish(isPosted: false)
-                }
-                .buttonStyle(.secondaryClassical)
-                .accessibilityIdentifier("keep-private-button")
+                .accessibilityIdentifier("summary-done-button")
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.top, Theme.Space.s4)
@@ -179,7 +171,7 @@ struct WalkSummaryScreen: View {
 
     // MARK: - Saving
 
-    private func finish(isPosted: Bool) {
+    private func finish() {
         // Guard against a double tap writing the walk twice.
         guard !hasSaved else { return }
         hasSaved = true
@@ -191,7 +183,6 @@ struct WalkSummaryScreen: View {
             distanceMeters: session.distanceMeters,
             elapsedSeconds: session.elapsed,
             note: note,
-            isPosted: isPosted,
             photo: photoData
         )
         onDone()

@@ -6,8 +6,8 @@ import CoreLocation
 ///
 /// This is the record Phase 8's profile reads to compute walks, total distance
 /// and longest walk. `UserProfileSeed` deliberately stores none of those, so
-/// this table is their only source — which is why a walk is written here
-/// whether or not the walker chooses to post it.
+/// this table is their only source. A walk is written here when the walker
+/// taps Done on the summary.
 @Model
 final class StoredWalk {
 
@@ -20,9 +20,6 @@ final class StoredWalk {
     var distanceMeters: Double
     var elapsedSeconds: Double
     var note: String
-    /// "Post to feed" versus "Keep it private". The feed does not exist until
-    /// Phase 6, so this phase stores the choice and Phase 6 honours it.
-    var isPosted: Bool
     /// The photograph, if one was attached. Stored inline: a walk photo is one
     /// image, and `.externalStorage` lets SwiftData spill it to a file anyway
     /// once it is large.
@@ -36,7 +33,6 @@ final class StoredWalk {
         distanceMeters: Double,
         elapsedSeconds: Double,
         note: String = "",
-        isPosted: Bool = false,
         photo: Data? = nil
     ) {
         self.id = id
@@ -46,7 +42,6 @@ final class StoredWalk {
         self.distanceMeters = distanceMeters
         self.elapsedSeconds = elapsedSeconds
         self.note = note
-        self.isPosted = isPosted
         self.photo = photo
     }
 

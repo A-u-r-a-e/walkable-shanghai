@@ -62,7 +62,6 @@ final class WalkStore {
         distanceMeters: Double,
         elapsedSeconds: Double,
         note: String,
-        isPosted: Bool,
         photo: Data?
     ) -> StoredWalk {
         let walk = StoredWalk(
@@ -72,7 +71,6 @@ final class WalkStore {
             distanceMeters: distanceMeters,
             elapsedSeconds: elapsedSeconds,
             note: note,
-            isPosted: isPosted,
             photo: photo
         )
         context.insert(walk)

@@ -12,11 +12,6 @@ struct ProfileScreen: View {
     @Environment(AppSettings.self) private var settings
     @Environment(RouteStore.self) private var store
     @Environment(WalkStore.self) private var walks
-    @Environment(SavedRoutesStore.self) private var saved
-
-    /// Opening the Saved tab is the parent's job — a tab is not a push, and a
-    /// screen should not reach into the shell it happens to be inside.
-    var onOpenSaved: () -> Void = {}
 
     @State private var isShowingOnboarding = false
     @State private var isShowingDesignSystem = false
@@ -237,8 +232,8 @@ struct ProfileScreen: View {
                 .sectionLabel()
                 .padding(.bottom, Theme.Space.s2)
 
-            // One grouped card. The five rows and their order are unchanged;
-            // the rules that used to run across the page have moved inside it.
+            // One grouped card. The rules that used to run across the page
+            // have moved inside it.
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: Theme.Space.s3) {
                     Text("settings.language".localized(language))
@@ -256,22 +251,12 @@ struct ProfileScreen: View {
 
                 SeparatorRule()
 
-                // Each of the three rows the plan asks for, each carrying its own
-                // real count rather than a static label.
+                // A real count rather than a static label.
                 settingsRow(
                     title: "settings.routesYouAdded".localized(language),
                     detail: String(walks.draftRoutes.count),
                     identifier: "profile-draw-route-row"
                 ) { isShowingBuilder = true }
-
-                SeparatorRule()
-
-                settingsRow(
-                    title: "settings.offlineDownloads".localized(language),
-                    detail: String(saved.offlineCount),
-                    identifier: "profile-offline-row",
-                    action: onOpenSaved
-                )
 
                 SeparatorRule()
 

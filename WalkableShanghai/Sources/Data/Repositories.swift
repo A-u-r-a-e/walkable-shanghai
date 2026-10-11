@@ -11,16 +11,6 @@ protocol RouteRepository: Sendable {
     func allRoutes() -> [Route]
     func route(id: String) -> Route?
     func featuredRoute() -> Route?
-    func featuredEdition() -> FeaturedEdition
-}
-
-protocol CommentRepository: Sendable {
-    func comments(forRoute routeId: String) -> [RouteComment]
-}
-
-protocol FeedRepository: Sendable {
-    func posts() -> [Post]
-    func collections() -> [RouteCollection]
 }
 
 // MARK: - Bundled implementation
@@ -28,10 +18,10 @@ protocol FeedRepository: Sendable {
 /// Decodes `SampleData.json` once and serves it from memory.
 ///
 /// Phase 1–2 storage. Note the split this sets up and that a backend would keep:
-/// the *catalogue* (routes, seeded comments, posts, collections) is read-only
-/// and server-owned; anything the user creates or chooses — saved and offline
-/// flags, walks, drafts, their own comments — goes to SwiftData from Phase 3.
-struct BundledDataSource: RouteRepository, CommentRepository, FeedRepository {
+/// the *catalogue* (routes and the profile seed) is read-only and server-owned;
+/// anything the user creates or chooses — saved and offline flags, walks,
+/// drafts — goes to SwiftData from Phase 3.
+struct BundledDataSource: RouteRepository {
 
     let data: SampleData
 
@@ -52,20 +42,6 @@ struct BundledDataSource: RouteRepository, CommentRepository, FeedRepository {
     func featuredRoute() -> Route? {
         data.routes.first { $0.isFeatured }
     }
-
-    func featuredEdition() -> FeaturedEdition { data.featured }
-
-    // MARK: CommentRepository
-
-    func comments(forRoute routeId: String) -> [RouteComment] {
-        data.comments.filter { $0.routeId == routeId }
-    }
-
-    // MARK: FeedRepository
-
-    func posts() -> [Post] { data.posts }
-
-    func collections() -> [RouteCollection] { data.collections }
 }
 
 // MARK: - Loading
@@ -154,18 +130,5 @@ final class RouteStore {
     /// opens its detail screen like any other.
     func route(id: String) -> Route? { routes.first { $0.id == id } }
     func featuredRoute() -> Route? { source?.featuredRoute() }
-    var featuredEdition: FeaturedEdition? { source?.featuredEdition() }
-    func comments(forRoute routeId: String) -> [RouteComment] {
-        source?.comments(forRoute: routeId) ?? []
-    }
-    func posts() -> [Post] { source?.posts() ?? [] }
-    func collections() -> [RouteCollection] { source?.collections() ?? [] }
     var profile: UserProfileSeed? { source?.data.profile }
-
-    /// Total distance of a collection, computed from its member routes. Never
-    /// stored — a stored total goes stale the moment a route is edited.
-    func totalKm(of collection: RouteCollection) -> Double {
-        let sum = collection.routeIds.compactMap { route(id: $0)?.km }.reduce(0, +)
-        return (sum * 10).rounded() / 10
-    }
 }

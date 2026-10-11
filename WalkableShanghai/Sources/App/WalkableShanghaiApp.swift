@@ -15,8 +15,6 @@ struct WalkableShanghaiApp: App {
     @State private var tracking: TrackingSession
     /// Finished walks and drawn routes.
     @State private var walkStore: WalkStore
-    /// Likes and the walker's own notes.
-    @State private var community: CommunityStore
     /// Downloaded routes, and whether we currently have a network.
     @State private var offline: OfflineStore
     @State private var reachability: Reachability
@@ -54,7 +52,6 @@ struct WalkableShanghaiApp: App {
 
         let walkStore = WalkStore(container: container, resetForTests: shouldReset)
         _walkStore = State(initialValue: walkStore)
-        _community = State(initialValue: CommunityStore(container: container, resetForTests: shouldReset))
         // The simulator has no airplane mode `simctl` can reach, so the offline
         // branch is forced by a launch argument in tests. A real run always
         // uses the live path monitor.
@@ -73,13 +70,13 @@ struct WalkableShanghaiApp: App {
 
         // Phase 3 seeded two routes as "offline" as a flag only. Now that
         // offline means real stored bytes, build what those flags claim exists
-        // — otherwise the Saved screen would list a downloaded route at zero
-        // bytes, which is exactly the kind of unverifiable figure this phase
-        // set out to remove.
+        // — otherwise a downloaded route would be listed at zero bytes, which
+        // is exactly the kind of unverifiable figure this phase set out to
+        // remove.
         let offlineStore = OfflineStore(container: container, resetForTests: shouldReset)
         for routeId in savedRoutesStore.offlineRouteIds where !offlineStore.hasBundle(routeId) {
             if let route = routeStore.route(id: routeId) {
-                offlineStore.download(route: route, notes: routeStore.comments(forRoute: routeId))
+                offlineStore.download(route: route)
             }
         }
         _offline = State(initialValue: offlineStore)
@@ -93,7 +90,6 @@ struct WalkableShanghaiApp: App {
                 .environment(savedRoutes)
                 .environment(tracking)
                 .environment(walkStore)
-                .environment(community)
                 .environment(offline)
                 .environment(reachability)
                 .modelContainer(container)

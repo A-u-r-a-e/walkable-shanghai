@@ -38,7 +38,7 @@ enum UserStateContainer {
     /// nothing from the bundled catalogue ever will be.
     static let schema = Schema([
         RouteUserState.self, StoredWalk.self, DraftRoute.self,
-        PostLike.self, UserComment.self, OfflineBundle.self,
+        OfflineBundle.self,
     ])
 
     /// Builds the store the app runs on.

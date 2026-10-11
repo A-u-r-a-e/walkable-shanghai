@@ -4,10 +4,9 @@ import XCTest
 /// Phase 1's acceptance test: the bundled catalogue decodes, and it contains
 /// what the mockup contained.
 ///
-/// These counts are not arbitrary — they are the five routes, four walker notes,
-/// three feed posts and two collections defined in the source design. If a
-/// future edit to `SampleData.json` breaks the shape or drops a record, this
-/// fails before anyone opens the simulator.
+/// The count is not arbitrary — it is the five routes defined in the source
+/// design. If a future edit to `SampleData.json` breaks the shape or drops a
+/// record, this fails before anyone opens the simulator.
 final class SampleDataTests: XCTestCase {
 
     private var data: SampleData!
@@ -21,9 +20,6 @@ final class SampleDataTests: XCTestCase {
 
     func testCatalogueDecodesWithExpectedCounts() {
         XCTAssertEqual(data.routes.count, 5, "five routes came from the mockup")
-        XCTAssertEqual(data.comments.count, 4, "four walker notes came from the mockup")
-        XCTAssertEqual(data.posts.count, 3, "three feed posts came from the mockup")
-        XCTAssertEqual(data.collections.count, 2, "two collections came from the mockup")
     }
 
     func testEveryRouteIsFullyBilingual() {
@@ -53,30 +49,6 @@ final class SampleDataTests: XCTestCase {
                 XCTAssertTrue((120.8...122.2).contains(point.lng), "\(route.id) has a longitude outside Shanghai")
             }
         }
-    }
-
-    func testEveryReferenceResolves() {
-        let routeIds = Set(data.routes.map(\.id))
-        for comment in data.comments {
-            XCTAssertTrue(routeIds.contains(comment.routeId), "comment \(comment.id) points at a missing route")
-        }
-        for post in data.posts {
-            XCTAssertTrue(routeIds.contains(post.routeId), "post \(post.id) points at a missing route")
-        }
-        for collection in data.collections {
-            for id in collection.routeIds {
-                XCTAssertTrue(routeIds.contains(id), "collection \(collection.id) points at a missing route")
-            }
-        }
-    }
-
-    func testCollectionTotalsAreComputedNotStored() {
-        let store = RouteStore()
-        guard let concession = store.collections().first(where: { $0.id == "concession" }) else {
-            return XCTFail("expected the concession collection")
-        }
-        // wukang 3.4 + fuxing 2.1 + bund 2.9
-        XCTAssertEqual(store.totalKm(of: concession), 8.4, accuracy: 0.001)
     }
 
     func testBothLanguagesResolveInterfaceStrings() {

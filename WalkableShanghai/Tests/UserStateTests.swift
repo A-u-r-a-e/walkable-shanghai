@@ -2,7 +2,7 @@ import XCTest
 import SwiftData
 @testable import WalkableShanghai
 
-/// Unit tests for the state the walker owns, and for the Featured edition data.
+/// Unit tests for the state the walker owns, and for the Featured route flag.
 ///
 /// These run against an in-memory SwiftData container, so they never touch the
 /// simulator's real database and each test starts clean.
@@ -106,22 +106,7 @@ final class UserStateTests: XCTestCase {
         XCTAssertEqual(reset.offlineRouteIds, SavedRoutesStore.seededOffline)
     }
 
-    // MARK: - Featured edition
-
-    func testFeaturedEditionDecodesAndIsBilingual() throws {
-        let data = try loadCatalogue()
-        let edition = data.featured
-
-        for language in AppLanguage.allCases {
-            XCTAssertFalse(edition.month(language).isEmpty, "month missing for \(language)")
-            XCTAssertFalse(edition.editorial(language).isEmpty, "editorial missing for \(language)")
-        }
-        XCTAssertNotEqual(edition.month(.english), edition.month(.chinese))
-        XCTAssertNotEqual(edition.editorial(.english), edition.editorial(.chinese))
-        XCTAssertFalse(edition.curatorName.isEmpty)
-        XCTAssertFalse(edition.curatorInitial.isEmpty)
-        XCTAssertGreaterThan(edition.walkersThisMonth, 0)
-    }
+    // MARK: - Featured route
 
     /// The Featured screen resolves its route from the flag, not from anything
     /// stored beside the editorial. If that ever stops being true, this fails.

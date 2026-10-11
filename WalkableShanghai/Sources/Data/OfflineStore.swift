@@ -5,13 +5,13 @@ import SwiftData
 /// Everything kept on the phone so one route works with no network.
 ///
 /// This is PLAN.md's option (a), and the coordinator's call: a route is
-/// "downloaded" when its own data, its walker notes, and a picture of its line
-/// are all sitting in the database. No map tiles, which is what makes it cheap
+/// "downloaded" when its own data and a picture of its line are both sitting
+/// in the database. No map tiles, which is what makes it cheap
 /// — and, given that Shanghai tiles come from Apple's China endpoints via
 /// AutoNavi (see the README), what makes it work at all without solving tile
 /// hosting first.
 ///
-/// The size shown to the walker is the byte count of exactly these three
+/// The size shown to the walker is the byte count of exactly these two
 /// fields. The mockup printed a flat "18 MB" for every route; that number was
 /// fiction, and a storage figure a walker cannot verify is worse than none.
 @Model
@@ -22,24 +22,21 @@ final class OfflineBundle {
     /// catalogue at display time so that when routes come from a server, a
     /// downloaded route keeps working after the catalogue moves on.
     var routeData: Data
-    /// The walker notes as they stood at download time.
-    var notesData: Data
     /// A picture of the route line, drawn from its own geometry. Externally
     /// stored: it is the only large field here, and the size query does not
     /// need to fault it in.
     @Attribute(.externalStorage) var mapImage: Data
     var downloadedAt: Date
 
-    init(routeId: String, routeData: Data, notesData: Data, mapImage: Data, downloadedAt: Date = Date()) {
+    init(routeId: String, routeData: Data, mapImage: Data, downloadedAt: Date = Date()) {
         self.routeId = routeId
         self.routeData = routeData
-        self.notesData = notesData
         self.mapImage = mapImage
         self.downloadedAt = downloadedAt
     }
 
     /// What this route actually occupies. Real bytes, not a guess.
-    var byteCount: Int { routeData.count + notesData.count + mapImage.count }
+    var byteCount: Int { routeData.count + mapImage.count }
 }
 
 @MainActor
@@ -75,11 +72,6 @@ final class OfflineStore {
         return try? JSONDecoder().decode(Route.self, from: data)
     }
 
-    func storedNotes(_ routeId: String) -> [RouteComment] {
-        guard let data = bundle(for: routeId)?.notesData else { return [] }
-        return (try? JSONDecoder().decode([RouteComment].self, from: data)) ?? []
-    }
-
     func storedMapImage(_ routeId: String) -> Data? { bundle(for: routeId)?.mapImage }
 
     /// Human-readable size, in the walker's language.
@@ -103,21 +95,15 @@ final class OfflineStore {
     /// milliseconds, and there is no network involved. Nothing here is worth a
     /// progress bar, and pretending otherwise would be theatre.
     @discardableResult
-    func download(route: Route, notes: [RouteComment], imageSize: CGSize = CGSize(width: 900, height: 560)) -> OfflineBundle? {
+    func download(route: Route, imageSize: CGSize = CGSize(width: 900, height: 560)) -> OfflineBundle? {
         guard let routeData = try? JSONEncoder().encode(route),
-              let notesData = try? JSONEncoder().encode(notes),
               let image = RouteImageRenderer.pngData(for: route, size: imageSize)
         else { return nil }
 
         // Replace rather than duplicate, so re-downloading refreshes.
         remove(routeId: route.id)
 
-        let bundle = OfflineBundle(
-            routeId: route.id,
-            routeData: routeData,
-            notesData: notesData,
-            mapImage: image
-        )
+        let bundle = OfflineBundle(routeId: route.id, routeData: routeData, mapImage: image)
         context.insert(bundle)
         persist()
         reload()

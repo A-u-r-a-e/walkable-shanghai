@@ -104,10 +104,10 @@ final class ProfileTests: XCTestCase {
 
         store.record(routeId: "wukang", startedAt: now.addingTimeInterval(-1800),
                      endedAt: now, distanceMeters: 3400, elapsedSeconds: 1800,
-                     note: "", isPosted: false, photo: nil)
+                     note: "", photo: nil)
         store.record(routeId: "creek", startedAt: now.addingTimeInterval(-3600),
                      endedAt: now, distanceMeters: 8200, elapsedSeconds: 3600,
-                     note: "", isPosted: true, photo: nil)
+                     note: "", photo: nil)
         store.saveDraftRoute(name: "Mine", coordinates: [], tagKeys: [])
 
         XCTAssertEqual(store.walkCount, 2)
@@ -122,23 +122,11 @@ final class ProfileTests: XCTestCase {
     /// String Catalog, resolved against the *app's* language rather than the
     /// phone's — this app can run in Chinese on an English phone.
     func testCountedStringsUseTheRightPluralForm() {
-        XCTAssertEqual("saved.count".localized(.english, count: 1), "1 route")
-        XCTAssertEqual("saved.count".localized(.english, count: 3), "3 routes")
-        XCTAssertEqual("saved.count".localized(.english, count: 0), "0 routes")
-        // Chinese has one form for every count.
-        XCTAssertEqual("saved.count".localized(.chinese, count: 1), "1 条路线")
-        XCTAssertEqual("saved.count".localized(.chinese, count: 3), "3 条路线")
-
         XCTAssertEqual("builder.points".localized(.english, count: 1), "1 point")
         XCTAssertEqual("builder.points".localized(.english, count: 5), "5 points")
 
         XCTAssertEqual("route.walkCount".localized(.english, count: 1), "walked 1 time")
         XCTAssertEqual("route.walkCount".localized(.english, count: 9), "walked 9 times")
-
-        XCTAssertEqual("time.daysAgo".localized(.english, count: 1), "1 day ago")
-        XCTAssertEqual("time.daysAgo".localized(.english, count: 2), "2 days ago")
-        XCTAssertEqual("time.minutesAgo".localized(.english, count: 1), "1 minute ago")
-        XCTAssertEqual("time.hoursAgo".localized(.english, count: 1), "1 hour ago")
     }
 
     /// The plural halves are composed back into the sentences that carry them,
@@ -168,21 +156,5 @@ final class ProfileTests: XCTestCase {
         XCTAssertEqual("route.deadEndCount".localized(.english, count: 1), "1 dead end")
         XCTAssertEqual("route.deadEndCount".localized(.english, count: 2), "2 dead ends")
         XCTAssertEqual("route.deadEndCount".localized(.chinese, count: 1), "1 个断点")
-    }
-
-    func testRelativeTimeCountsCorrectlyAtOne() {
-        let base = now
-        XCTAssertEqual(
-            RelativeTime.text(since: base.addingTimeInterval(-60), language: .english, now: base),
-            "1 minute ago"
-        )
-        XCTAssertEqual(
-            RelativeTime.text(since: base.addingTimeInterval(-3600), language: .english, now: base),
-            "1 hour ago"
-        )
-        XCTAssertEqual(
-            RelativeTime.text(since: base.addingTimeInterval(-86_400), language: .english, now: base),
-            "1 day ago"
-        )
     }
 }

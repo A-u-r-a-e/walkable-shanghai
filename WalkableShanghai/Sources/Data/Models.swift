@@ -52,48 +52,6 @@ struct Route: Codable, Identifiable, Hashable, Sendable {
     let isFeatured: Bool
 }
 
-/// A note left by someone who walked the route, optionally pinned to a specific
-/// corner of it.
-struct RouteComment: Codable, Identifiable, Hashable, Sendable {
-    let id: String
-    let routeId: String
-    let authorName: String
-    let authorInitial: String
-    /// Relative, and therefore localised as content: "3 days ago" / "3 天前".
-    /// Real comments will carry a timestamp and format this at read time; the
-    /// seeded ones are frozen strings.
-    let relativeTime: LocalizedText
-    let body: LocalizedText
-    /// "Wukang Rd × Hunan Rd". Empty means the row is hidden entirely.
-    let pinnedPlace: LocalizedText
-}
-
-/// A walk someone finished and chose to share. The published form of a Walk.
-struct Post: Codable, Identifiable, Hashable, Sendable {
-    let id: String
-    let authorName: String
-    let authorInitial: String
-    let routeId: String
-    let relativeTime: LocalizedText
-    let km: Double
-    let minutes: Int
-    let replyCount: Int
-    /// Likes excluding the current user. The UI adds one when you have liked it.
-    let baseLikes: Int
-    let note: LocalizedText
-}
-
-/// A curated set of routes from one walker.
-///
-/// Route count and total distance are computed from `routeIds`, never stored —
-/// a stored total goes stale the moment a route is edited.
-struct RouteCollection: Codable, Identifiable, Hashable, Sendable {
-    let id: String
-    let name: LocalizedText
-    let curatorName: LocalizedText
-    let routeIds: [String]
-}
-
 /// Seed identity for the signed-in walker.
 ///
 /// Deliberately holds no statistics. The source mockup hardcoded walks, total
@@ -106,27 +64,8 @@ struct UserProfileSeed: Codable, Hashable, Sendable {
     let joinedMonth: LocalizedText
 }
 
-/// The editorial wrapper around the monthly Featured route.
-///
-/// Note what is *not* here: which route is featured. That is the `isFeatured`
-/// flag on `Route`, so there is one source of truth and a unit test can assert
-/// exactly one route claims it. This type only carries the writing around it.
-struct FeaturedEdition: Codable, Hashable, Sendable {
-    let month: LocalizedText
-    /// Why this route, this month — the curator's argument, distinct from the
-    /// route's own practical note.
-    let editorial: LocalizedText
-    let curatorName: String
-    let curatorInitial: String
-    let walkersThisMonth: Int
-}
-
 /// The whole bundled catalogue, as decoded from `SampleData.json`.
 struct SampleData: Codable, Sendable {
     let routes: [Route]
-    let comments: [RouteComment]
-    let posts: [Post]
-    let collections: [RouteCollection]
     let profile: UserProfileSeed
-    let featured: FeaturedEdition
 }

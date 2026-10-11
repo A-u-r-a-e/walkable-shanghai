@@ -39,7 +39,6 @@ final class WalkStoreTests: XCTestCase {
             distanceMeters: 3400,
             elapsedSeconds: 3120,
             note: "Quiet before nine.",
-            isPosted: false,
             photo: nil
         )
 
@@ -50,23 +49,21 @@ final class WalkStoreTests: XCTestCase {
         XCTAssertEqual(walk.routeId, "wukang")
         XCTAssertEqual(walk.distanceMeters, 3400, accuracy: 0.001)
         XCTAssertEqual(walk.note, "Quiet before nine.")
-        XCTAssertFalse(walk.isPosted)
     }
 
-    func testBothButtonsStoreTheWalkAndOnlyTheFlagDiffers() throws {
-        let store = WalkStore(container: try makeContainer())
-        let now = Date()
-
-        store.record(routeId: "wukang", startedAt: now, endedAt: now, distanceMeters: 1000,
-                     elapsedSeconds: 600, note: "", isPosted: true, photo: nil)
-        store.record(routeId: "creek", startedAt: now, endedAt: now, distanceMeters: 2000,
-                     elapsedSeconds: 900, note: "", isPosted: false, photo: nil)
-
-        // Keeping a walk private must never mean losing it — Phase 8's profile
-        // figures count both.
-        XCTAssertEqual(store.walkCount, 2)
-        XCTAssertEqual(store.walks.filter(\.isPosted).count, 1)
-        XCTAssertEqual(store.totalKm, 3.0, accuracy: 0.001)
+    func testDoneStoresTheWalk() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let store = WalkStore(container: container)
+        store.record(
+            routeId: "wukang",
+            startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 3_000),
+            distanceMeters: 3_400,
+            elapsedSeconds: 3_000,
+            note: "",
+            photo: nil
+        )
+        XCTAssertEqual(WalkStore(container: container).walkCount, 1)
     }
 
     func testAPhotoSurvivesTheRoundTrip() throws {
@@ -75,7 +72,7 @@ final class WalkStoreTests: XCTestCase {
 
         let first = WalkStore(container: container)
         first.record(routeId: "wukang", startedAt: Date(), endedAt: Date(), distanceMeters: 100,
-                     elapsedSeconds: 60, note: "", isPosted: false, photo: bytes)
+                     elapsedSeconds: 60, note: "", photo: bytes)
 
         let reopened = WalkStore(container: container)
         XCTAssertEqual(reopened.walks.first?.photo, bytes, "the photograph did not persist")
@@ -95,9 +92,9 @@ final class WalkStoreTests: XCTestCase {
         let now = Date()
 
         store.record(routeId: "a", startedAt: now, endedAt: now, distanceMeters: 2800,
-                     elapsedSeconds: 1, note: "", isPosted: false, photo: nil)
+                     elapsedSeconds: 1, note: "", photo: nil)
         store.record(routeId: "b", startedAt: now, endedAt: now, distanceMeters: 2100,
-                     elapsedSeconds: 1, note: "", isPosted: false, photo: nil)
+                     elapsedSeconds: 1, note: "", photo: nil)
 
         // Best so far is 2800.
         XCTAssertEqual(try XCTUnwrap(store.metersOverBest(3400)), 600, accuracy: 0.001)
@@ -110,9 +107,9 @@ final class WalkStoreTests: XCTestCase {
         let store = WalkStore(container: try makeContainer())
         let now = Date()
         store.record(routeId: "a", startedAt: now, endedAt: now, distanceMeters: 2000,
-                     elapsedSeconds: 1, note: "", isPosted: false, photo: nil)
+                     elapsedSeconds: 1, note: "", photo: nil)
         let latest = store.record(routeId: "b", startedAt: now, endedAt: now, distanceMeters: 5000,
-                                  elapsedSeconds: 1, note: "", isPosted: false, photo: nil)
+                                  elapsedSeconds: 1, note: "", photo: nil)
 
         // Without the exclusion a stored walk would be compared against itself
         // and always report exactly zero.

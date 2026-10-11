@@ -11,7 +11,6 @@ struct RouteDetailScreen: View {
     @Environment(AppSettings.self) private var settings
     @Environment(RouteStore.self) private var store
     @Environment(SavedRoutesStore.self) private var saved
-    @Environment(CommunityStore.self) private var community
     @Environment(OfflineStore.self) private var offline
     @Environment(Reachability.self) private var reachability
     @Environment(\.dismiss) private var dismiss
@@ -19,7 +18,6 @@ struct RouteDetailScreen: View {
     let routeId: String
 
     @State private var trackingRoute: Route?
-    @State private var showingComments = false
 
     var body: some View {
         let language = settings.language
@@ -39,9 +37,6 @@ struct RouteDetailScreen: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(isPresented: $showingComments) {
-            CommentsScreen(routeId: routeId)
-        }
         .navigationDestination(item: $trackingRoute) { route in
             // Finishing a walk unwinds the whole way out, not just back to this
             // screen. You have walked the route; being returned to its
@@ -76,24 +71,13 @@ struct RouteDetailScreen: View {
         return store.route(id: routeId)
     }
 
-    /// Seeded notes plus anything the walker has written.
-    ///
-    /// Offline, the seeded half comes from the downloaded snapshot rather than
-    /// the catalogue, so the count is right with no network.
-    private func noteCount(for routeId: String) -> Int {
-        let seeded = isReadingOffline
-            ? offline.storedNotes(routeId).count
-            : store.comments(forRoute: routeId).count
-        return seeded + community.comments(forRoute: routeId).count
-    }
-
     private var isOffline: Bool { saved.isOffline(routeId) }
 
     /// One call site for both halves of "downloaded", so the flag and the
     /// stored bundle cannot drift apart.
     private func setOffline(_ on: Bool, route: Route) {
         if on {
-            offline.download(route: route, notes: store.comments(forRoute: route.id))
+            offline.download(route: route)
         } else {
             offline.remove(routeId: route.id)
         }
@@ -155,12 +139,6 @@ struct RouteDetailScreen: View {
                     }
                     .buttonStyle(.primaryClassical)
                     .accessibilityIdentifier("start-walking-button")
-
-                    Button("route.notes".localized(language, String(noteCount(for: route.id)))) {
-                        showingComments = true
-                    }
-                    .buttonStyle(.secondaryClassical)
-                    .accessibilityIdentifier("notes-button")
                 }
                 .padding(.horizontal, Theme.Space.screen)
                 .padding(.top, Theme.Space.s4)

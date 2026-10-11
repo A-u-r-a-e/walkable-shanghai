@@ -81,23 +81,20 @@ final class OfflineTests: XCTestCase {
 
     // MARK: - The bundle
 
-    func testDownloadingStoresRouteNotesAndImageAndReportsRealBytes() throws {
+    func testDownloadingStoresRouteAndImageAndReportsRealBytes() throws {
         let source = try catalogue()
         let route = try XCTUnwrap(source.route(id: "wukang"))
-        let notes = source.comments(forRoute: "wukang")
-        XCTAssertFalse(notes.isEmpty, "wukang should carry seeded notes")
 
         let store = OfflineStore(container: try makeContainer())
-        let bundle = try XCTUnwrap(store.download(route: route, notes: notes))
+        let bundle = try XCTUnwrap(store.download(route: route))
 
         XCTAssertGreaterThan(bundle.routeData.count, 0)
-        XCTAssertGreaterThan(bundle.notesData.count, 0)
         XCTAssertGreaterThan(bundle.mapImage.count, 0)
         // The reported size is the sum of exactly what is stored — no constant,
         // no estimate.
         XCTAssertEqual(
             bundle.byteCount,
-            bundle.routeData.count + bundle.notesData.count + bundle.mapImage.count
+            bundle.routeData.count + bundle.mapImage.count
         )
         XCTAssertEqual(store.totalBytes, bundle.byteCount)
     }
@@ -106,12 +103,12 @@ final class OfflineTests: XCTestCase {
         let source = try catalogue()
         let store = OfflineStore(container: try makeContainer())
         let route = try XCTUnwrap(source.route(id: "wukang"))
-        store.download(route: route, notes: source.comments(forRoute: "wukang"))
+        store.download(route: route)
 
         let text = store.sizeText("wukang", language: .english)
         XCTAssertFalse(text.isEmpty)
         XCTAssertFalse(text.contains("18 MB"), "the fictional catalogue size leaked through")
-        // A route line plus a few notes lands in kilobytes, not megabytes.
+        // A route and a picture of its line land in kilobytes, not megabytes.
         XCTAssertTrue(text.contains("KB") || text.contains("MB"), "unexpected size text: \(text)")
 
         // An un-downloaded route reports zero rather than a borrowed figure.
@@ -121,10 +118,9 @@ final class OfflineTests: XCTestCase {
     func testTheOfflineReadPathUsesOnlyTheStoredSnapshot() throws {
         let source = try catalogue()
         let route = try XCTUnwrap(source.route(id: "wukang"))
-        let notes = source.comments(forRoute: "wukang")
 
         let store = OfflineStore(container: try makeContainer())
-        store.download(route: route, notes: notes)
+        store.download(route: route)
 
         // Everything the offline screen needs comes back out of the bundle,
         // decoded — not from the catalogue.
@@ -135,10 +131,6 @@ final class OfflineTests: XCTestCase {
         XCTAssertEqual(stored.points.count, route.points.count, "the line did not survive encoding")
         XCTAssertEqual(stored.km, route.km)
 
-        let storedNotes = store.storedNotes("wukang")
-        XCTAssertEqual(storedNotes.count, notes.count)
-        XCTAssertEqual(storedNotes.first?.body(.chinese), notes.first?.body(.chinese))
-
         XCTAssertNotNil(store.storedMapImage("wukang"))
     }
 
@@ -148,7 +140,7 @@ final class OfflineTests: XCTestCase {
         let route = try XCTUnwrap(source.route(id: "creek"))
 
         let first = OfflineStore(container: container)
-        first.download(route: route, notes: source.comments(forRoute: "creek"))
+        first.download(route: route)
         let size = first.totalBytes
 
         let reopened = OfflineStore(container: container)
@@ -165,9 +157,9 @@ final class OfflineTests: XCTestCase {
         let route = try XCTUnwrap(source.route(id: "wukang"))
         let store = OfflineStore(container: try makeContainer())
 
-        store.download(route: route, notes: source.comments(forRoute: "wukang"))
+        store.download(route: route)
         let once = store.totalBytes
-        store.download(route: route, notes: source.comments(forRoute: "wukang"))
+        store.download(route: route)
 
         XCTAssertEqual(store.bundles.count, 1, "re-downloading duplicated the bundle")
         XCTAssertEqual(store.totalBytes, once, "the reported size doubled")

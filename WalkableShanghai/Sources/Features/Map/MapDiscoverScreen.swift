@@ -35,7 +35,6 @@ struct MapDiscoverScreen: View {
     @State private var detent: Detent = .peek
     @State private var dragTranslation: CGFloat = 0
     @State private var selectedRouteId: String?
-    @State private var showingFeatured = false
     @State private var trackingRoute: Route?
 
     var body: some View {
@@ -71,9 +70,6 @@ struct MapDiscoverScreen: View {
         .screenBackground()
         .navigationDestination(item: $selectedRouteId) { routeId in
             RouteDetailScreen(routeId: routeId)
-        }
-        .navigationDestination(isPresented: $showingFeatured) {
-            FeaturedScreen()
         }
         .navigationDestination(item: $trackingRoute) { route in
             TrackingScreen(route: route) { trackingRoute = nil }
@@ -190,13 +186,6 @@ struct MapDiscoverScreen: View {
 
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        // The monthly editorial page sits at the head of the
-                        // Featured filter, which is the one place in the app
-                        // where "featured" is already what you asked for.
-                        if filter == .featured {
-                            featuredBanner(language: language)
-                            SeparatorRule()
-                        }
                         if listedRoutes.isEmpty {
                             EmptyStateNote(
                                 text: "map.empty".localized(language),
@@ -284,31 +273,6 @@ struct MapDiscoverScreen: View {
         let maximum = Detent.full.height(in: available)
         // Dragging up is a negative translation, which should grow the sheet.
         return min(maximum, max(minimum, base - dragTranslation))
-    }
-
-    private func featuredBanner(language: AppLanguage) -> some View {
-        Button {
-            showingFeatured = true
-        } label: {
-            HStack(spacing: Theme.Space.s2) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 12, weight: .regular))
-                    // The system's one warm colour, reserved for the Featured
-                    // moment and used nowhere else. DESIGN.md §2.
-                    .foregroundStyle(Theme.sunlight)
-                Text("featured.title".localized(language))
-                    .font(Typography.meta)
-                    .foregroundStyle(Theme.accent)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.labelTertiary)
-            }
-            .padding(.vertical, Theme.Space.s3)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("featured-banner")
     }
 
     private func detailLine(for route: Route, language: AppLanguage) -> String {
