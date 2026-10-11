@@ -61,10 +61,8 @@ struct DesignSystemGalleryView: View {
                 section("gallery.tags".localized(language)) {
                     VStack(alignment: .leading, spacing: Theme.Space.s3) {
                         HStack(spacing: Theme.Space.s2) {
-                            TagChip(text: "Plane trees", style: .neutral)
-                            TagChip(text: "Featured", style: .featured)
-                            TagChip(text: "Xuhui", style: .neutral)
-                            TagChip(text: "Green", style: .neutral, symbol: "leaf")
+                            TagChip(text: RouteTag.featured.localizationKey.localized(language), style: .featured)
+                            TagChip(text: RouteTag.popular.localizationKey.localized(language), style: .neutral)
                         }
                         HStack(spacing: Theme.Space.s3) {
                             AvatarInitial(initial: "沁", size: 34)

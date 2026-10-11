@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Liquid Glass on iOS 26, system materials on iOS 18 — decided once, here.
 ///
-/// The design rule is in DESIGN.md §4 and is short enough to repeat: **glass is
+/// The design rule is in DESIGN.md §6 and is short enough to repeat: **glass is
 /// for things that float over content.** Anything sitting *on* the page is
 /// opaque. Glass over an opaque background is noise — there is nothing behind it
 /// to refract. Glass over the map is the entire point, because the map keeps
@@ -89,4 +89,3 @@ extension View {
         background(Theme.bg.ignoresSafeArea())
     }
 }
-

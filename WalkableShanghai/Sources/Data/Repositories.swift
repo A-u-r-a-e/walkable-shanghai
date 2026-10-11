@@ -19,8 +19,8 @@ protocol RouteRepository: Sendable {
 ///
 /// Phase 1–2 storage. Note the split this sets up and that a backend would keep:
 /// the *catalogue* (routes and the profile seed) is read-only and server-owned;
-/// anything the user creates or chooses — saved and offline flags, walks,
-/// drafts — goes to SwiftData from Phase 3.
+/// anything the user creates or chooses — saved routes and their downloads,
+/// walks, drafts — goes to SwiftData from Phase 3.
 struct BundledDataSource: RouteRepository {
 
     let data: SampleData
@@ -104,7 +104,7 @@ final class RouteStore {
 
     /// Everything the app treats as a route: the bundled catalogue first, then
     /// anything the walker drew. One list, so the map, the sheet, the filters
-    /// and route detail need no notion of origin.
+    /// and the route card need no notion of origin.
     private(set) var routes: [Route] = []
     private(set) var loadFailure: String?
     private(set) var mineRouteIds: Set<String> = []
@@ -138,7 +138,7 @@ final class RouteStore {
     }
 
     /// Looks in the merged list, not just the catalogue, so a drawn route
-    /// opens its detail screen like any other.
+    /// opens its route card like any other.
     func route(id: String) -> Route? { routes.first { $0.id == id } }
     func featuredRoute() -> Route? { source?.featuredRoute() }
     var profile: UserProfileSeed? { source?.data.profile }

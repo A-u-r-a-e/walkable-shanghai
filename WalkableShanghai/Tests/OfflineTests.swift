@@ -129,8 +129,6 @@ final class OfflineTests: XCTestCase {
         XCTAssertEqual(stored.name(.chinese), route.name(.chinese))
         XCTAssertEqual(stored.points.count, route.points.count, "the line did not survive encoding")
         XCTAssertEqual(stored.km, route.km)
-
-        XCTAssertNotNil(store.storedMapImage("wukang"))
     }
 
     func testABundleSurvivesRelaunchAndRemovingDeletesIt() throws {
@@ -162,21 +160,5 @@ final class OfflineTests: XCTestCase {
 
         XCTAssertEqual(store.bundles.count, 1, "re-downloading duplicated the bundle")
         XCTAssertEqual(store.totalBytes, once, "the reported size doubled")
-    }
-
-    // MARK: - Reachability
-
-    func testStoredMapIsUsedOnlyWhenOfflineAndDownloaded() {
-        let online = Reachability(forcedOffline: false)
-        XCTAssertTrue(online.isOnline)
-        XCTAssertFalse(online.shouldUseStoredMap(hasBundle: true),
-                       "the live map should be used when there is a network")
-
-        let offline = Reachability(forcedOffline: true)
-        XCTAssertFalse(offline.isOnline)
-        XCTAssertTrue(offline.shouldUseStoredMap(hasBundle: true))
-        // No download and no network: there is nothing better to show, so we do
-        // not pretend there is.
-        XCTAssertFalse(offline.shouldUseStoredMap(hasBundle: false))
     }
 }

@@ -41,8 +41,6 @@ final class SavedRoutesStore {
 
     func isSaved(_ routeId: String) -> Bool { savedRouteIds.contains(routeId) }
 
-    var savedCount: Int { savedRouteIds.count }
-
     // MARK: - Writing
 
     /// Saving and downloading are one state: a saved route is kept on the

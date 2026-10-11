@@ -319,7 +319,6 @@ struct MapDiscoverScreen: View {
     }
 }
 
-
 // MARK: - Sheet silhouette
 
 /// A rectangle rounded on its top two corners only.

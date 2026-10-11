@@ -143,7 +143,7 @@ struct TrackingScreen: View {
                     .accessibilityIdentifier("progress-percent")
             }
 
-            // A capsule track with an accent fill, per DESIGN.md §6. The old
+            // A capsule track with an accent fill, per DESIGN.md §8. The old
             // 3pt ruled bar belonged to the print system; this one says "how far
             // along" in the same green the walked line uses.
             GeometryReader { geometry in

@@ -96,7 +96,7 @@ final class UserStateTests: XCTestCase {
         saved.removeAllDownloads()
         XCTAssertTrue(offline.bundles.isEmpty)
         XCTAssertFalse(offline.hasBundle("fuxing"))
-        XCTAssertEqual(saved.savedCount, 0)
+        XCTAssertTrue(saved.savedRouteIds.isEmpty)
     }
 
     func testEnsureDownloadsDeletesDownloadsOfUnsavedRoutes() throws {

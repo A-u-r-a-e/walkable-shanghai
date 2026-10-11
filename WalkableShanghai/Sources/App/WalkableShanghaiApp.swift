@@ -15,9 +15,8 @@ struct WalkableShanghaiApp: App {
     @State private var tracking: TrackingSession
     /// Finished walks and drawn routes.
     @State private var walkStore: WalkStore
-    /// Downloaded routes, and whether we currently have a network.
+    /// Downloaded routes.
     @State private var offline: OfflineStore
-    @State private var reachability: Reachability
 
     private let container: ModelContainer
 
@@ -54,11 +53,6 @@ struct WalkableShanghaiApp: App {
 
         let walkStore = WalkStore(container: container, resetForTests: shouldReset)
         _walkStore = State(initialValue: walkStore)
-        // The simulator has no airplane mode `simctl` can reach, so the offline
-        // branch is forced by a launch argument in tests. A real run always
-        // uses the live path monitor.
-        let forcedOffline = arguments.contains("-uitest.forceOffline") ? true : nil
-        _reachability = State(initialValue: Reachability(forcedOffline: forcedOffline))
 
         // Drawn routes join the catalogue before the first screen draws, so a
         // route saved in a previous session is already on the map at launch.
@@ -84,7 +78,6 @@ struct WalkableShanghaiApp: App {
                 .environment(tracking)
                 .environment(walkStore)
                 .environment(offline)
-                .environment(reachability)
                 .modelContainer(container)
         }
     }

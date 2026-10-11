@@ -237,31 +237,21 @@ struct SegmentedRing<Value: Hashable>: View {
 
 // MARK: - Tags
 
-/// A tag on a route: its character, when to walk it, where it is.
+/// A tag on a route, from the fixed `RouteTag` list. Featured is green; every
+/// other tag is neutral.
 struct TagChip: View {
     enum Style { case featured, neutral }
 
     let text: String
     var style: Style = .neutral
-    /// An optional SF Symbol before the text. Used for the one tag whose
-    /// meaning the theme can actually carry — "Green" takes a leaf. Hidden from
-    /// VoiceOver so the chip still announces exactly its own words.
-    var symbol: String?
 
     var body: some View {
-        HStack(spacing: 4) {
-            if let symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: 10, weight: .medium))
-                    .accessibilityHidden(true)
-            }
-            Text(text)
-                .font(Typography.meta)
-        }
-        .padding(.horizontal, Theme.Space.s2 + 1)
-        .padding(.vertical, Theme.Space.s1 + 1)
-        .foregroundStyle(foreground)
-        .background(background, in: Theme.shape(Theme.Radius.xs))
+        Text(text)
+            .font(Typography.meta)
+            .padding(.horizontal, Theme.Space.s2 + 1)
+            .padding(.vertical, Theme.Space.s1 + 1)
+            .foregroundStyle(foreground)
+            .background(background, in: Theme.shape(Theme.Radius.xs))
     }
 
     private var foreground: Color {
@@ -329,7 +319,7 @@ struct FlowRow: Layout {
 
 /// A walker, shown as the single character the design uses in place of a photo.
 /// A well disc for everyone, with a hairline ring and full-strength ink for
-/// the signed-in walker or a curator.
+/// the signed-in walker.
 struct AvatarInitial: View {
     let initial: String
     var size: CGFloat = 32
@@ -427,7 +417,7 @@ extension ButtonStyle where Self == SecondaryButtonStyle {
 /// outline it replaces was the print system's — Apple's own circular bar buttons
 /// separate by fill. Anything floating over live content calls
 /// `.floatingSurface` instead; the two are deliberately different, and
-/// DESIGN.md §4 says which is which.
+/// DESIGN.md §6 says which is which.
 struct CircularIconButton: View {
     let system: String
     var size: CGFloat = 36

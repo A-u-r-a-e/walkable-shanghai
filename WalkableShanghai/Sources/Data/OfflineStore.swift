@@ -72,8 +72,6 @@ final class OfflineStore {
         return try? JSONDecoder().decode(Route.self, from: data)
     }
 
-    func storedMapImage(_ routeId: String) -> Data? { bundle(for: routeId)?.mapImage }
-
     /// Human-readable size, in the walker's language.
     func sizeText(_ routeId: String, language: AppLanguage) -> String {
         Self.sizeText(bytes: bundle(for: routeId)?.byteCount ?? 0, language: language)
