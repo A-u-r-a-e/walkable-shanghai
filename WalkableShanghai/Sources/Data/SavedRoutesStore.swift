@@ -2,38 +2,34 @@ import Foundation
 import Observation
 import SwiftData
 
-/// Which routes the walker has saved, and which they have downloaded.
+/// Which routes the walker has saved. A saved route is downloaded
+/// automatically, and unsaving it deletes the download, so the walker never
+/// manages the two separately.
 ///
-/// Phase 2 backed this with a plain `Set` and a note saying SwiftData would
-/// take over "without the call sites changing". This is that swap, and the
-/// promise held: the public surface below — `isSaved`, `isOffline`,
-/// `toggleSaved`, `toggleOffline`, `savedCount` — is unchanged, so the map
-/// screen and its filter needed no edits.
-///
-/// It keeps the two id sets in memory and writes through to SwiftData on every
-/// toggle. That is deliberate rather than querying the store on each read: the
+/// It keeps the saved ids in memory and writes through to SwiftData on every
+/// change. That is deliberate rather than querying the store on each read: the
 /// map re-evaluates `isSaved` for every route on every filter change and every
 /// redraw, and a `@Query` per row would turn a cheap set lookup into a fetch.
-/// The sets are the read path; SwiftData is the durability.
+/// The set is the read path; SwiftData is the durability.
+@MainActor
 @Observable
 final class SavedRoutesStore {
 
     /// The state a fresh install starts with, matching the source design.
     /// Seeded once, then owned by the walker.
     static let seededSaved: Set<String> = ["wukang", "creek", "century"]
-    static let seededOffline: Set<String> = ["fuxing", "wukang"]
 
     private(set) var savedRouteIds: Set<String> = []
-    private(set) var offlineRouteIds: Set<String> = []
 
     @ObservationIgnored private let context: ModelContext
+    @ObservationIgnored private let offline: OfflineStore
 
     /// - Parameter resetToSeed: wipes the stored rows and seeds again. Only the
     ///   UI tests pass this, so each test starts from a known state; without it
     ///   the store is left exactly as the walker left it.
-    init(container: ModelContainer, resetToSeed: Bool = false) {
+    init(container: ModelContainer, offline: OfflineStore, resetToSeed: Bool = false) {
         self.context = ModelContext(container)
-
+        self.offline = offline
         if resetToSeed {
             wipe()
         }
@@ -44,23 +40,44 @@ final class SavedRoutesStore {
     // MARK: - Reading
 
     func isSaved(_ routeId: String) -> Bool { savedRouteIds.contains(routeId) }
-    func isOffline(_ routeId: String) -> Bool { offlineRouteIds.contains(routeId) }
 
     var savedCount: Int { savedRouteIds.count }
-    var offlineCount: Int { offlineRouteIds.count }
 
     // MARK: - Writing
 
-    func toggleSaved(_ routeId: String) {
-        let row = rowOrCreate(routeId)
-        row.isSaved.toggle()
+    /// Saving and downloading are one state: a saved route is kept on the
+    /// phone so it works without a network, and unsaving frees the space.
+    func setSaved(_ isSaved: Bool, route: Route) {
+        let row = rowOrCreate(route.id)
+        row.isSaved = isSaved
         persist()
+        if isSaved {
+            offline.download(route: route)
+        } else {
+            offline.remove(routeId: route.id)
+        }
         reload()
     }
 
-    func toggleOffline(_ routeId: String) {
-        let row = rowOrCreate(routeId)
-        row.isOffline.toggle()
+    func toggleSaved(_ route: Route) {
+        setSaved(!isSaved(route.id), route: route)
+    }
+
+    /// Builds the download for any saved route that lacks one — the seeded
+    /// routes on first launch, or routes saved before saving meant downloading.
+    func ensureDownloads(routes: [Route]) {
+        for route in routes where isSaved(route.id) && !offline.hasBundle(route.id) {
+            offline.download(route: route)
+        }
+    }
+
+    /// Frees every download. Because saved and downloaded are one state, this
+    /// also clears the bookmarks.
+    func removeAllDownloads() {
+        for row in allRows() where row.isSaved {
+            row.isSaved = false
+            offline.remove(routeId: row.routeId)
+        }
         persist()
         reload()
     }
@@ -93,7 +110,6 @@ final class SavedRoutesStore {
     private func reload() {
         let rows = allRows()
         savedRouteIds = Set(rows.filter(\.isSaved).map(\.routeId))
-        offlineRouteIds = Set(rows.filter(\.isOffline).map(\.routeId))
     }
 
     private func persist() {
@@ -106,15 +122,8 @@ final class SavedRoutesStore {
 
     private func seedIfEmpty() {
         guard allRows().isEmpty else { return }
-        let ids = Self.seededSaved.union(Self.seededOffline)
-        for id in ids {
-            context.insert(
-                RouteUserState(
-                    routeId: id,
-                    isSaved: Self.seededSaved.contains(id),
-                    isOffline: Self.seededOffline.contains(id)
-                )
-            )
+        for id in Self.seededSaved {
+            context.insert(RouteUserState(routeId: id, isSaved: true))
         }
         persist()
     }

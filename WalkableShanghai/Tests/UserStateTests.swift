@@ -6,10 +6,15 @@ import SwiftData
 ///
 /// These run against an in-memory SwiftData container, so they never touch the
 /// simulator's real database and each test starts clean.
+@MainActor
 final class UserStateTests: XCTestCase {
 
     private func makeContainer() throws -> ModelContainer {
         try UserStateContainer.make(inMemory: true)
+    }
+
+    private func route(_ id: String) -> Route {
+        RouteStore().route(id: id)!
     }
 
     /// The catalogue ships in the *app* bundle, not the test bundle, so the
@@ -22,24 +27,22 @@ final class UserStateTests: XCTestCase {
     // MARK: - Seeding
 
     func testAFreshStoreSeedsTheDesignedState() throws {
-        let store = SavedRoutesStore(container: try makeContainer())
+        let container = try makeContainer()
+        let store = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
 
-        XCTAssertEqual(store.savedRouteIds, ["wukang", "creek", "century"])
-        XCTAssertEqual(store.offlineRouteIds, ["fuxing", "wukang"])
-        XCTAssertEqual(store.savedCount, 3)
-        XCTAssertEqual(store.offlineCount, 2)
+        XCTAssertEqual(store.savedRouteIds, SavedRoutesStore.seededSaved)
     }
 
     func testSeedingHappensOnceNotOnEveryLaunch() throws {
         let container = try makeContainer()
 
-        let first = SavedRoutesStore(container: container)
-        first.toggleSaved("wukang")          // now unsaved
+        let first = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
+        first.toggleSaved(route("wukang"))   // now unsaved
         XCTAssertFalse(first.isSaved("wukang"))
 
         // A second store on the same container stands in for a relaunch. It
         // must not re-seed over the walker's choice.
-        let second = SavedRoutesStore(container: container)
+        let second = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
         XCTAssertFalse(
             second.isSaved("wukang"),
             "re-seeding overwrote a choice the walker had already made"
@@ -52,58 +55,78 @@ final class UserStateTests: XCTestCase {
     func testTogglesWriteThroughAndAreReadBackByANewStore() throws {
         let container = try makeContainer()
 
-        let first = SavedRoutesStore(container: container)
-        first.toggleSaved("bund")            // seeded unsaved → saved
-        first.toggleOffline("bund")          // seeded not-offline → offline
+        let first = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
+        first.toggleSaved(route("bund"))     // seeded unsaved → saved
         XCTAssertTrue(first.isSaved("bund"))
-        XCTAssertTrue(first.isOffline("bund"))
 
         // This is the assertion the phase exists for: a different store reading
         // the same container sees what the first one wrote.
-        let second = SavedRoutesStore(container: container)
+        let second = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
         XCTAssertTrue(second.isSaved("bund"), "the saved flag did not persist")
-        XCTAssertTrue(second.isOffline("bund"), "the offline flag did not persist")
+        XCTAssertTrue(OfflineStore(container: container).hasBundle("bund"), "the download did not persist")
     }
 
-    func testSavedAndOfflineAreIndependent() throws {
-        let store = SavedRoutesStore(container: try makeContainer())
+    func testSavingDownloadsAndUnsavingDeletes() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let offline = OfflineStore(container: container)
+        let saved = SavedRoutesStore(container: container, offline: offline, resetToSeed: true)
 
-        // fuxing is seeded offline but not saved, which is the case that would
-        // break if the two flags shared one row-level boolean.
-        XCTAssertTrue(store.isOffline("fuxing"))
-        XCTAssertFalse(store.isSaved("fuxing"))
+        saved.setSaved(false, route: route("fuxing"))
+        XCTAssertFalse(offline.hasBundle("fuxing"))
 
-        store.toggleSaved("fuxing")
-        XCTAssertTrue(store.isSaved("fuxing"))
-        XCTAssertTrue(store.isOffline("fuxing"), "saving a route should not change its offline flag")
+        saved.setSaved(true, route: route("fuxing"))
+        XCTAssertTrue(saved.isSaved("fuxing"))
+        XCTAssertTrue(offline.hasBundle("fuxing"))
+
+        saved.setSaved(false, route: route("fuxing"))
+        XCTAssertFalse(saved.isSaved("fuxing"))
+        XCTAssertFalse(offline.hasBundle("fuxing"))
+    }
+
+    func testRemoveAllDownloadsAlsoClearsBookmarks() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let offline = OfflineStore(container: container)
+        let saved = SavedRoutesStore(container: container, offline: offline, resetToSeed: true)
+        saved.ensureDownloads(routes: RouteStore().routes)
+        XCTAssertFalse(offline.bundles.isEmpty)
+
+        saved.removeAllDownloads()
+        XCTAssertTrue(offline.bundles.isEmpty)
+        XCTAssertEqual(saved.savedCount, 0)
+    }
+
+    func testEnsureDownloadsBacksEverySavedRoute() throws {
+        let container = try UserStateContainer.make(inMemory: true)
+        let offline = OfflineStore(container: container)
+        let saved = SavedRoutesStore(container: container, offline: offline, resetToSeed: true)
+        saved.ensureDownloads(routes: RouteStore().routes)
+        XCTAssertEqual(Set(offline.bundles.map(\.routeId)), saved.savedRouteIds)
     }
 
     func testTogglingARouteWithNoRowYetCreatesOne() throws {
         let container = try makeContainer()
-        let store = SavedRoutesStore(container: container)
+        let store = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
 
-        // "bund" and "century" have rows from the seed; a route that is in
-        // neither seeded set still has a row because the seed inserts the union.
-        // Use an id outside the catalogue to prove the create path works.
-        XCTAssertFalse(store.isSaved("some-new-route"))
-        store.toggleSaved("some-new-route")
-        XCTAssertTrue(store.isSaved("some-new-route"))
+        // The seed writes rows only for the saved routes, so "bund" has none
+        // yet. Saving it proves the create path works.
+        XCTAssertFalse(store.isSaved("bund"))
+        store.toggleSaved(route("bund"))
+        XCTAssertTrue(store.isSaved("bund"))
 
-        let reopened = SavedRoutesStore(container: container)
-        XCTAssertTrue(reopened.isSaved("some-new-route"))
+        let reopened = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
+        XCTAssertTrue(reopened.isSaved("bund"))
     }
 
     func testResetToSeedRestoresTheDesignedState() throws {
         let container = try makeContainer()
 
-        let dirty = SavedRoutesStore(container: container)
-        dirty.toggleSaved("wukang")
-        dirty.toggleSaved("bund")
+        let dirty = SavedRoutesStore(container: container, offline: OfflineStore(container: container))
+        dirty.toggleSaved(route("wukang"))
+        dirty.toggleSaved(route("bund"))
         XCTAssertNotEqual(dirty.savedRouteIds, SavedRoutesStore.seededSaved)
 
-        let reset = SavedRoutesStore(container: container, resetToSeed: true)
+        let reset = SavedRoutesStore(container: container, offline: OfflineStore(container: container), resetToSeed: true)
         XCTAssertEqual(reset.savedRouteIds, SavedRoutesStore.seededSaved)
-        XCTAssertEqual(reset.offlineRouteIds, SavedRoutesStore.seededOffline)
     }
 
     // MARK: - Featured route

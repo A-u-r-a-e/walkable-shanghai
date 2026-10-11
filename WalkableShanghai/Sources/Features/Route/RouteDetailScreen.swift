@@ -71,19 +71,6 @@ struct RouteDetailScreen: View {
         return store.route(id: routeId)
     }
 
-    private var isOffline: Bool { saved.isOffline(routeId) }
-
-    /// One call site for both halves of "downloaded", so the flag and the
-    /// stored bundle cannot drift apart.
-    private func setOffline(_ on: Bool, route: Route) {
-        if on {
-            offline.download(route: route)
-        } else {
-            offline.remove(routeId: route.id)
-        }
-        saved.toggleOffline(route.id)
-    }
-
     private func content(route: Route, language: AppLanguage) -> some View {
         VStack(spacing: 0) {
             map(route: route, language: language)
@@ -171,7 +158,7 @@ struct RouteDetailScreen: View {
                     tinted: true,
                     ringed: isSaved
                 ) {
-                    saved.toggleSaved(route.id)
+                    saved.toggleSaved(route)
                 }
                 .accessibilityIdentifier("save-toggle")
                 // The label states what tapping will do, not what the icon is —
@@ -217,19 +204,6 @@ struct RouteDetailScreen: View {
 
     private func secondaryActions(route: Route, language: AppLanguage) -> some View {
         HStack(spacing: Theme.Space.s2) {
-            // The label carries the state: "Download" is an invitation,
-            // "Offline ready" is a report. No separate checkmark needed.
-            Button {
-                setOffline(!isOffline, route: route)
-            } label: {
-                actionFace(
-                    system: isOffline ? "checkmark.circle" : "arrow.down.circle",
-                    title: (isOffline ? "route.offlineReady" : "route.download").localized(language)
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("offline-toggle")
-
             // The plan left this one "trivial with ShareLink" and unwired
             // through seven phases. A control that does nothing is the kind of
             // thing a polish pass exists to find, so it is wired here.

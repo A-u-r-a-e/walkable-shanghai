@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
 
-/// What *this walker* has decided about a route: kept it, and asked for it
-/// offline.
+/// What *this walker* has decided about a route: kept it. Keeping a route
+/// also downloads it, so there is no separate offline flag.
 ///
 /// This is the first thing in the app that SwiftData owns, and the split it
 /// marks is the one `Repositories.swift` set up in Phase 1. The catalogue —
@@ -21,12 +21,10 @@ final class RouteUserState {
     /// One row per route. Unique so a toggle can never create a duplicate.
     @Attribute(.unique) var routeId: String
     var isSaved: Bool
-    var isOffline: Bool
 
-    init(routeId: String, isSaved: Bool = false, isOffline: Bool = false) {
+    init(routeId: String, isSaved: Bool = false) {
         self.routeId = routeId
         self.isSaved = isSaved
-        self.isOffline = isOffline
     }
 }
 

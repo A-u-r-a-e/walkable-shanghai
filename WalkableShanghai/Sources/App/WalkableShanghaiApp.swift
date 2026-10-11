@@ -9,7 +9,7 @@ struct WalkableShanghaiApp: App {
     /// choices, `RouteStore` is where data comes from.
     @State private var settings = AppSettings()
     @State private var store: RouteStore
-    /// Saved and offline flags, now persisted by SwiftData.
+    /// Saved routes, persisted by SwiftData. Saving a route downloads it.
     @State private var savedRoutes: SavedRoutesStore
 
     @State private var tracking: TrackingSession
@@ -33,7 +33,9 @@ struct WalkableShanghaiApp: App {
         // happens on every test launch.
         let arguments = ProcessInfo.processInfo.arguments
         let shouldReset = arguments.contains("-uitest.resetUserState")
-        let savedRoutesStore = SavedRoutesStore(container: container, resetToSeed: shouldReset)
+        let offlineStore = OfflineStore(container: container, resetForTests: shouldReset)
+        _offline = State(initialValue: offlineStore)
+        let savedRoutesStore = SavedRoutesStore(container: container, offline: offlineStore, resetToSeed: shouldReset)
         _savedRoutes = State(initialValue: savedRoutesStore)
 
         // Tracking's location source is chosen once, here. A UI test asks for a
@@ -68,18 +70,9 @@ struct WalkableShanghaiApp: App {
         )
         _store = State(initialValue: routeStore)
 
-        // Phase 3 seeded two routes as "offline" as a flag only. Now that
-        // offline means real stored bytes, build what those flags claim exists
-        // — otherwise a downloaded route would be listed at zero bytes, which
-        // is exactly the kind of unverifiable figure this phase set out to
-        // remove.
-        let offlineStore = OfflineStore(container: container, resetForTests: shouldReset)
-        for routeId in savedRoutesStore.offlineRouteIds where !offlineStore.hasBundle(routeId) {
-            if let route = routeStore.route(id: routeId) {
-                offlineStore.download(route: route)
-            }
-        }
-        _offline = State(initialValue: offlineStore)
+        // A saved route is a downloaded route. The seeded routes, and any saved
+        // before saving meant downloading, get their bytes built here.
+        savedRoutesStore.ensureDownloads(routes: routeStore.routes)
     }
 
     var body: some Scene {
