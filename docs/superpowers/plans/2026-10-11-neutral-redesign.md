@@ -6,7 +6,7 @@
 
 **Architecture:** SwiftUI app over SwiftData. Catalogue data is bundled JSON served through `RouteStore`; walker state lives in SwiftData stores injected through the environment. Pure list logic (`RouteList`) decides what the map sheet shows and is unit-tested apart from views. All map drawing stays behind one wrapper view, `RouteMapView`.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, MapKit (see Task 8 for the provider decision), XCTest/XCUITest, Xcode 26.6.
+**Tech Stack:** Swift 6, SwiftUI, SwiftData, MapKit (kept after comparing AMap, Tencent, Baidu, Mapbox and MapLibre; see `research/map-provider/`), XCTest/XCUITest, Xcode 26.6.
 
 **Spec:** `docs/superpowers/specs/2026-10-11-ecosia-redesign-design.md`
 
@@ -1369,23 +1369,214 @@ git commit -m "Add the route-list logic behind the Routes sheet"
 
 ---
 
-<!-- TASK 8 (map provider and styles) is inserted here once the provider research is complete. -->
+### Task 8: Map styles on MapKit
+
+The app stays on Apple MapKit. The comparison is in `research/map-provider/`. MapKit is the only option that is lawful to show in mainland China with no licence or account, offers satellite and traffic there, and fits the existing wrapper. AMap, Tencent and Baidu need commercial licences (¥50,000/year) and Chinese accounts, and lack English labels or arm64 simulator support. Mapbox and MapLibre are not lawful or reliable for users inside mainland China. This task adds the three styles to the existing wrapper and makes the wrapper redraw when its mode changes, which the route card (Task 10) relies on.
+
+**Files:**
+- Create: `Sources/Features/Map/MapStyleOption.swift`, `Tests/MapStyleTests.swift`
+- Modify: `Sources/Localization/AppSettings.swift`, `Sources/Features/Map/RouteMapView.swift`
+
+**Interfaces:**
+- Produces:
+  - `enum MapStyleOption: String, CaseIterable, Sendable { case standard, satellite, traffic }` with `localizationKey` (`"map.style.<raw>"`) and `systemImage`.
+  - `AppSettings.mapStyle: MapStyleOption`, persisted under `settings.mapStyle`, default `.standard`.
+  - `RouteMapView.style: MapStyleOption` (default `.standard`) and `RouteMapView.configuration(for: MapStyleOption) -> MKMapConfiguration`.
+  - Wrapper contract used by Tasks 9 and 10: the map redraws and re-frames whenever the set of routes, the mode or the appearance changes; the `MKMapView` carries accessibility identifier `route-map` and accessibility value equal to the style's raw value; pins are identified `route-pin-<routeId>`.
+
+- [ ] **Step 1: Write the failing tests**
+
+`Tests/MapStyleTests.swift`:
+
+```swift
+import XCTest
+import MapKit
+@testable import WalkableShanghai
+
+@MainActor
+final class MapStyleTests: XCTestCase {
+
+    func testEachStyleMapsToItsMapKitConfiguration() throws {
+        let standard = try XCTUnwrap(RouteMapView.configuration(for: .standard) as? MKStandardMapConfiguration)
+        XCTAssertEqual(standard.emphasisStyle, .muted)
+        XCTAssertFalse(standard.showsTraffic)
+
+        let traffic = try XCTUnwrap(RouteMapView.configuration(for: .traffic) as? MKStandardMapConfiguration)
+        XCTAssertTrue(traffic.showsTraffic)
+
+        XCTAssertTrue(RouteMapView.configuration(for: .satellite) is MKHybridMapConfiguration)
+    }
+
+    func testTheChoicePersistsAndDefaultsToStandard() {
+        let defaults = UserDefaults(suiteName: "MapStyleTests")!
+        defaults.removePersistentDomain(forName: "MapStyleTests")
+
+        XCTAssertEqual(AppSettings(defaults: defaults).mapStyle, .standard)
+
+        let settings = AppSettings(defaults: defaults)
+        settings.mapStyle = .satellite
+        XCTAssertEqual(AppSettings(defaults: defaults).mapStyle, .satellite)
+    }
+
+    func testEveryStyleHasBothLanguages() {
+        for style in MapStyleOption.allCases {
+            XCTAssertNotEqual(L10n.string(style.localizationKey, .english), style.localizationKey)
+            XCTAssertNotEqual(L10n.string(style.localizationKey, .chinese), style.localizationKey)
+        }
+    }
+}
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Expected: compile errors for `MapStyleOption`, `mapStyle`, `configuration(for:)`.
+
+- [ ] **Step 3: The option and the setting**
+
+`Sources/Features/Map/MapStyleOption.swift`:
+
+```swift
+import Foundation
+
+/// The three basemaps the walker can choose between on the map.
+enum MapStyleOption: String, CaseIterable, Sendable {
+    case standard
+    case satellite
+    case traffic
+
+    var localizationKey: String { "map.style.\(rawValue)" }
+
+    var systemImage: String {
+        switch self {
+        case .standard: return "map"
+        case .satellite: return "globe.asia.australia"
+        case .traffic: return "car"
+        }
+    }
+}
+```
+
+In `Sources/Localization/AppSettings.swift`, add `static let mapStyle = "settings.mapStyle"` to `Key`, and:
+
+```swift
+    var mapStyle: MapStyleOption {
+        didSet {
+            guard mapStyle != oldValue else { return }
+            defaults.set(mapStyle.rawValue, forKey: Key.mapStyle)
+        }
+    }
+```
+
+initialised in `init` with `self.mapStyle = defaults.string(forKey: Key.mapStyle).flatMap(MapStyleOption.init(rawValue:)) ?? .standard`.
+
+```bash
+cd /Users/aurae25/walkable-shanghai/WalkableShanghai
+python3 Scripts/strings.py set map.style.standard "Map" "地图"
+python3 Scripts/strings.py set map.style.satellite "Satellite" "卫星"
+python3 Scripts/strings.py set map.style.traffic "Traffic" "路况"
+python3 Scripts/strings.py set map.style.button "Map style" "地图样式" "Accessibility label for the map-style button."
+```
+
+- [ ] **Step 4: Teach the wrapper the styles**
+
+In `Sources/Features/Map/RouteMapView.swift`:
+
+- declare `var style: MapStyleOption = .standard` directly after `let routes: [Route]`, so the memberwise initialiser takes it as `RouteMapView(mode:routes:style:bottomInset:topInset:onSelectRoute:…)`;
+- add, as a static function on `RouteMapView`:
+
+```swift
+    /// MapKit's configuration for each style.
+    ///
+    /// Standard keeps the muted emphasis so the route reads over the map, and
+    /// hides Apple's points of interest, which compete with our pins. Traffic
+    /// is the same map with traffic drawn. Satellite is imagery with street
+    /// labels (MapKit's hybrid), because bare imagery gives a walker nothing
+    /// to read.
+    static func configuration(for style: MapStyleOption) -> MKMapConfiguration {
+        switch style {
+        case .standard, .traffic:
+            let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
+            configuration.pointOfInterestFilter = .excludingAll
+            configuration.showsTraffic = style == .traffic
+            return configuration
+        case .satellite:
+            let configuration = MKHybridMapConfiguration(elevationStyle: .flat)
+            configuration.pointOfInterestFilter = .excludingAll
+            return configuration
+        }
+    }
+```
+
+- in `makeUIView`, replace the three configuration lines and their comment with `map.preferredConfiguration = Self.configuration(for: style)`, and add `map.accessibilityIdentifier = "route-map"` and `map.accessibilityValue = style.rawValue`;
+- add `var lastStyle: MapStyleOption?` to `Coordinator`, and at the top of `updateUIView`, after `context.coordinator.parent = self`:
+
+```swift
+        if context.coordinator.lastStyle != style {
+            context.coordinator.lastStyle = style
+            map.preferredConfiguration = Self.configuration(for: style)
+            map.accessibilityValue = style.rawValue
+        }
+```
+
+- add the mode to the redraw signature, so selecting a route redraws (pins off, one line) even when the list already held only that route:
+
+```swift
+        let signature = routes.map(\.id).joined(separator: ",") + "|\(mode)|\(colorScheme)"
+```
+
+- update the comment above the signature to mention the mode.
+
+- [ ] **Step 5: Run the unit tests**
+
+Expected: `TEST SUCCEEDED`, including `MapStyleTests`.
+
+- [ ] **Step 6: Look at each style on both runtimes**
+
+The style can be forced with a launch argument, because `AppSettings` reads `UserDefaults` and the argument domain wins:
+
+```bash
+cd /Users/aurae25/walkable-shanghai/WalkableShanghai
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+for device in "iPhone 17 Pro" "iPhone 16 Pro"; do
+  xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai -sdk iphonesimulator -destination "platform=iOS Simulator,name=$device" -derivedDataPath /tmp/ws-style build -quiet
+  xcrun simctl boot "$device" 2>/dev/null
+  xcrun simctl install "$device" /tmp/ws-style/Build/Products/Debug-iphonesimulator/WalkableShanghai.app
+  for style in standard satellite traffic; do
+    xcrun simctl terminate "$device" com.walkableshanghai.app 2>/dev/null
+    xcrun simctl launch "$device" com.walkableshanghai.app -settings.hasSeenOnboarding YES -settings.mapStyle $style
+    sleep 8
+    xcrun simctl io "$device" screenshot "/tmp/ws-style-${device// /-}-$style.png"
+  done
+done
+```
+
+Read all six screenshots. Record in the task comment which runtimes draw scenery for which style. On 2026-10-11 Apple's China map endpoints answered from this Mac over a VPN, so the iOS 26.5 blank-basemap problem in the README may be gone; report what the screenshots show, not what the README says. If a style is blank on a runtime, that is a network fact to document in Task 14, not a code bug — do not work around it.
+
+- [ ] **Step 7: Commit**
+
+```bash
+cd /Users/aurae25/walkable-shanghai
+git add -A
+git commit -m "Add Map, Satellite and Traffic styles to the MapKit wrapper"
+```
+
+---
 
 ### Task 9: Routes sheet — dropdown, period selector, sections, rows, search
 
 **Files:**
-- Create: `Sources/Features/Map/RouteListSheet.swift`, `Sources/Features/Map/NearbyOrigin.swift`, `UITests/Support/AppLaunch.swift`, `UITests/RouteListUITests.swift`
+- Create: `Sources/Features/Map/RouteListSheet.swift`, `Sources/Features/Map/NearbyOrigin.swift`, `UITests/Support/AppLaunch.swift`, `UITests/RouteListUITests.swift`, `UITests/MapStyleUITests.swift`
 - Modify: `Sources/Features/Map/MapDiscoverScreen.swift`, `Sources/DesignSystem/Components.swift` (`RouteRow`), `Sources/App/WalkableShanghaiApp.swift` (nothing new to inject; `RouteStore` already carries `activity` and `mineRouteIds`)
 - Delete: `UITests/MapDiscoverUITests.swift` (its coverage moves to `RouteListUITests` and, in Task 10, `RouteCardUITests`)
 
 **Interfaces:**
-- Consumes: `RouteList.sections(...)`, `RouteListQuery`, `RouteListOption`, `RouteListSection`, `ActivityPeriod`, `RouteStore.activity`, `RouteStore.mineRouteIds`, `SavedRoutesStore.savedRouteIds`, `RouteMapView` (Task 8 contract).
+- Consumes: `RouteList.sections(...)`, `RouteListQuery`, `RouteListOption`, `RouteListSection`, `ActivityPeriod`, `RouteStore.activity`, `RouteStore.mineRouteIds`, `SavedRoutesStore.savedRouteIds`, `MapStyleOption`, `AppSettings.mapStyle`, `RouteMapView` (Task 8 contract).
 - Produces:
-  - `RouteRow(name: String, detail: String, status: String)` (no number).
+  - `RouteRow(routeId: String, name: String, detail: String, status: String)` (no number).
   - `RouteListSheet(query: Binding<RouteListQuery>, sections: [RouteListSection], onSelect: (String) -> Void, onNewRoute: () -> Void)`.
   - `NearbyOrigin.current() -> Coordinate?`.
-  - Identifiers: `map-search-field`, `routes-option-menu`, `period-today|week|month|allTime`, `routes-section-mine`, `routes-section-saved`, `new-route-button`, `routes-empty-all|mine|saved`, `route-row-<id>`, `route-row-status-<id>`, `sheet-handle`, `record-button`.
-  - UI-test helpers in `UITests/Support/AppLaunch.swift`: `launchWalkable(language:resetState:arguments:)`, `anyElement(_:_:)`, `attachScreenshot(_:_:)`, `revealRow(_:_:)`, `chooseRoutesOption(_:_:)`.
+  - Identifiers: `map-search-field`, `map-style-button`, `routes-option-menu`, `period-today|week|month|allTime`, `routes-section-mine`, `routes-section-saved`, `new-route-button`, `routes-empty-all|mine|saved`, `route-row-<id>`, `route-row-status-<id>`, `sheet-handle`, `record-button`.
+  - UI-test helpers in `UITests/Support/AppLaunch.swift`: `launchWalkable(language:resetState:mapStyle:arguments:)`, `anyElement(_:_:)`, `attachScreenshot(_:_:)`, `revealRow(_:_:)`, `chooseRoutesOption(_:_:)`.
 
 - [ ] **Step 1: Add the shared UI-test helpers**
 
@@ -1403,10 +1594,13 @@ extension XCTestCase {
     /// Launches past onboarding, in the language asked for, from the seeded
     /// state unless `resetState` is false. Location is ignored so Nearby
     /// measures from People's Square and the order is fixed.
-    func launchWalkable(language: String = "english", resetState: Bool = true, arguments: [String] = []) -> XCUIApplication {
+    /// `mapStyle` pins the basemap for the launch; pass nil to read whatever
+    /// the previous launch stored.
+    func launchWalkable(language: String = "english", resetState: Bool = true, mapStyle: String? = "standard", arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-settings.language", language, "-settings.hasSeenOnboarding", "YES", "-uitest.ignoreLocation"]
             + (resetState ? ["-uitest.resetUserState"] : [])
+            + (mapStyle.map { ["-settings.mapStyle", $0] } ?? [])
             + arguments
         app.launch()
         XCTAssertTrue(anyElement(app, "routes-option-menu").waitForExistence(timeout: 10), "the Routes sheet never appeared")
@@ -1541,9 +1735,61 @@ final class RouteListUITests: XCTestCase {
 }
 ```
 
+`UITests/MapStyleUITests.swift`:
+
+```swift
+import XCTest
+
+/// The map-style button switches between Map, Satellite and Traffic, and the
+/// choice survives a relaunch.
+final class MapStyleUITests: XCTestCase {
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+    }
+
+    private func chooseStyle(_ app: XCUIApplication, _ title: String) {
+        anyElement(app, "map-style-button").tap()
+        let item = app.buttons[title].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 3), "style \(title) missing")
+        item.tap()
+    }
+
+    func testEachStyleCanBeChosen() {
+        let app = launchWalkable()
+        let map = anyElement(app, "route-map")
+        XCTAssertEqual(map.value as? String, "standard")
+        chooseStyle(app, "Satellite")
+        XCTAssertEqual(map.value as? String, "satellite")
+        attachScreenshot(app, "map-style-satellite")
+        chooseStyle(app, "Traffic")
+        XCTAssertEqual(map.value as? String, "traffic")
+        attachScreenshot(app, "map-style-traffic")
+        chooseStyle(app, "Map")
+        XCTAssertEqual(map.value as? String, "standard")
+    }
+
+    func testTheChoiceSurvivesRelaunch() {
+        var app = launchWalkable()
+        chooseStyle(app, "Satellite")
+        app.terminate()
+        app = launchWalkable(resetState: false, mapStyle: nil)
+        XCTAssertEqual(anyElement(app, "route-map").value as? String, "satellite")
+        chooseStyle(app, "Map")
+    }
+
+    func testTheMenuReadsInChinese() {
+        let app = launchWalkable(language: "chinese")
+        anyElement(app, "map-style-button").tap()
+        XCTAssertTrue(app.buttons["卫星"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["路况"].exists)
+    }
+}
+```
+
 - [ ] **Step 3: Run them to see them fail**
 
-Run the `RouteListUITests` class.
+Run the `RouteListUITests` and `MapStyleUITests` classes.
 Expected: failures at `launchWalkable` — `routes-option-menu` never appears.
 
 - [ ] **Step 4: Strings**
@@ -1836,6 +2082,29 @@ In `Sources/Features/Map/MapDiscoverScreen.swift`:
             .floatingSurface(in: Capsule())
 ```
 
+- put the map-style button beside the search field, in one `HStack(spacing: Theme.Space.s2)` with the search capsule:
+
+```swift
+            Menu {
+                Picker(selection: Bindable(settings).mapStyle) {
+                    ForEach(MapStyleOption.allCases, id: \.self) { style in
+                        Label(style.localizationKey.localized(language), systemImage: style.systemImage).tag(style)
+                    }
+                } label: {
+                    EmptyView()
+                }
+            } label: {
+                Image(systemName: settings.mapStyle.systemImage)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.label)
+                    .frame(width: 46, height: 46)
+                    .floatingSurface(in: Circle(), interactive: true)
+            }
+            .accessibilityIdentifier("map-style-button")
+            .accessibilityLabel("map.style.button".localized(language))
+```
+
+- pass `style: settings.mapStyle` to `RouteMapView`;
 - in the sheet, below `grabHandle`, place:
 
 ```swift
@@ -1863,7 +2132,7 @@ Delete `UITests/MapDiscoverUITests.swift`.
 
 - [ ] **Step 9: Run the new UI tests and the unit tests**
 
-Run `RouteListUITests`, then the unit tests.
+Run `RouteListUITests` and `MapStyleUITests`, then the unit tests.
 Expected: all pass. If `testPopularHasAPeriodSelectorAndRanksByIt` sees fewer rows than expected, the sheet did not expand — check `sheet-handle` is hittable above the period selector.
 
 - [ ] **Step 10: Commit**
