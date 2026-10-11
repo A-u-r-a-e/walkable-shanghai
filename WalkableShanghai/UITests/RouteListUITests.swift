@@ -2,6 +2,7 @@ import XCTest
 
 /// The Routes sheet: its five options, Popular's period selector, the
 /// sections under Saved, search, and what each row says.
+@MainActor
 final class RouteListUITests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -70,6 +71,8 @@ final class RouteListUITests: XCTestCase {
         field.tap()
         field.typeText("bund")
         XCTAssertEqual(visibleRowOrder(app), ["bund"])
+        attachScreenshot(app, "routes-search-en")
+        XCTAssertTrue(app.buttons["route-row-bund"].isHittable, "the keyboard covers the search results")
     }
 
     func testTheSheetReadsInChinese() {

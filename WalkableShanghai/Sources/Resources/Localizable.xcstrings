@@ -415,7 +415,7 @@
       }
     },
     "map.search": {
-      "comment": "Placeholder in the map search field. Inert until search is built.",
+      "comment": "Placeholder in the map search field, which filters the Routes sheet by route name.",
       "extractionState": "manual",
       "localizations": {
         "en": {

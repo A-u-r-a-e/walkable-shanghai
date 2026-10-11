@@ -119,7 +119,7 @@ struct DesignSystemGalleryView: View {
     private func detail(for route: Route, language: AppLanguage) -> String {
         let km = "unit.km".localized(language)
         let min = "unit.min".localized(language)
-        return "\(route.km) \(km) · \(route.minutes) \(min)"
+        return "\(String(format: "%.1f", route.km)) \(km) · \(route.minutes) \(min)"
     }
 
     private func status(for route: Route, language: AppLanguage) -> String {

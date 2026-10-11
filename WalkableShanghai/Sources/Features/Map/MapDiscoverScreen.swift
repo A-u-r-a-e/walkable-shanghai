@@ -199,7 +199,9 @@ struct MapDiscoverScreen: View {
             .floatingPanel(in: SheetShape(radius: Theme.Radius.xl))
             .shadow(color: Theme.Shadow.mdColor, radius: 18, y: -4)
         }
-        .ignoresSafeArea(edges: .bottom)
+        // Runs under the home indicator but not under the keyboard, so search
+        // results stay visible while the walker types.
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 
     private func grabHandle(available: CGFloat) -> some View {

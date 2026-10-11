@@ -2,6 +2,7 @@ import XCTest
 
 /// The map-style button switches between Map, Satellite and Traffic, and the
 /// choice survives a relaunch.
+@MainActor
 final class MapStyleUITests: XCTestCase {
 
     override func setUpWithError() throws {

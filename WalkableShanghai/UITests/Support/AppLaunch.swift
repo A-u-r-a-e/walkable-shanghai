@@ -4,6 +4,7 @@ import XCTest
 ///
 /// Named so they cannot collide with the private helpers older test classes
 /// still declare.
+@MainActor
 extension XCTestCase {
 
     /// Launches past onboarding, in the language asked for, from the seeded
