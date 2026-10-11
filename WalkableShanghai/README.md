@@ -32,8 +32,8 @@ xcodebuild -project WalkableShanghai.xcodeproj -scheme WalkableShanghai \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
 
-If you'd rather not prefix every command, run this once — it needs your password,
-which is why it was not done for you:
+Optional, needs admin rights: point `xcode-select` at Xcode, and the prefix is
+no longer needed.
 
 ```sh
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -134,8 +134,9 @@ Routes sheet; new tests should launch through it. A few older classes
 (`LanguageSwitchUITests`, `ProfileUITests`, `TrackingUITests`, and the
 onboarding test in `SummaryAndBuilderUITests`) still build their own
 `XCUIApplication`. Most of them set something the helper does not, such as
-onboarding shown or a text size; `TrackingUITests` was never moved over. `anyElement`, `revealRow`, `chooseRoutesOption`,
-`isSheetPeeking`, `visibleRowOrder` and `attachScreenshot` cover the rest. The
+onboarding shown or a text size; `TrackingUITests` was never moved over.
+`anyElement`, `revealRow`, `chooseRoutesOption`, `isSheetPeeking`,
+`visibleRowOrder` and `attachScreenshot` cover the rest. The
 helpers are `@MainActor`, so a test class that uses them is marked `@MainActor`
 too.
 
@@ -165,7 +166,6 @@ Launch arguments the app understands:
 | `-uitest.resetUserState` | start from the seeded saved routes, with no walks or drawn routes |
 | `-uitest.ignoreLocation` | Nearby measures from People's Square, so its order does not depend on the simulator's location |
 | `-uitest.simulateWalk <routeId>` | tracking follows that route instead of CoreLocation |
-| `-uitest.forceOffline` | forces `Reachability` offline; no current screen reads it (see "What offline means here") |
 
 ## Counting things in two languages
 
@@ -224,10 +224,6 @@ catalogue comes from a server, a route you took with you has to keep working
 after the server's copy moves on. The Downloads page already draws from the
 stored bundles.
 
-`Reachability` still exists and the app still builds it (honouring
-`-uitest.forceOffline`), but since the route card replaced the route-detail
-screen, no view reads it.
-
 ## A picture must never decide the layout's width
 
 `.scaledToFill()` reports the *scaled* size of the image, not the size of the
@@ -261,10 +257,18 @@ The app stays on **Apple MapKit**. `../research/map-provider/` compares the
 alternatives — AMap (`amap.md`), Tencent, Baidu and Mapbox
 (`tencent-baidu-mapbox.md`), and MapLibre (`maplibre-and-china-law.md`). MapKit
 is the only option that is lawful to show in mainland China with no licence or
-account, offers satellite and traffic there, and fits the existing wrapper. AMap,
-Tencent and Baidu need commercial licences and Chinese accounts, and lack English
-labels or arm64 simulator support; Mapbox and MapLibre are not lawful or
-reliable for users inside mainland China.
+account, offers satellite and traffic there, and fits the existing wrapper. AMap
+needs a ¥50,000-a-year technical service licence once an app is publicly listed,
+and an account verified through Alipay or a Chinese business licence; its
+English labels cannot be combined with a custom style, and its SDK appears to
+have no arm64 simulator slice. Tencent is free only for non-commercial use, with
+a commercial licence for companies; its account must be bound to WeChat, it
+documents English labels only outside mainland China, and its CocoaPods
+XCFrameworks include an arm64 simulator slice. Baidu's English labels are a paid
+add-on and cannot be combined with a custom style; its CocoaPods build forces
+x86_64 in the simulator, while the manual XCFramework download has arm64; and
+its commercial licence is open to companies only. Mapbox and MapLibre are not
+lawful or reliable for users inside mainland China.
 
 The map-style button offers three styles, persisted in `settings.mapStyle`:
 
@@ -347,10 +351,10 @@ back button is chrome rather than a selection.
 ## Screenshots
 
 `UITests/ScreenshotUITests.swift` walks every screen and attaches a screenshot of
-each: the route list peeking and raised, Popular, Saved, the route card expanded
-and collapsed, Me, the profile, downloaded routes, tracking, the walk summary
-and the builder. The test only navigates; appearance is switched on the
-simulator between runs. From `WalkableShanghai/`:
+each: onboarding, the route list peeking and raised, Popular, Featured, Saved,
+Mine, the route card expanded and collapsed, Me, the profile, downloaded routes,
+tracking, the walk summary and the builder. The test only navigates; appearance
+is switched on the simulator between runs. From `WalkableShanghai/`:
 
 ```sh
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer

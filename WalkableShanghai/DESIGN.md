@@ -71,7 +71,8 @@ Green appears in these places and nowhere else:
 - **The route line** on every map: the listed routes, the walked half of a route
   while tracking, the dashed half still ahead, and the builder's dotted draft.
   A route's pin belongs to its line: a `surface` disc with an `accent` ring and
-  an `accent` centre.
+  an `accent` centre. So do the walker dot while tracking and the builder's
+  draft points, `accent` rings with the first one filled.
 - **Selected states**: the selected segment of a segmented control (Popular's
   period selector, the onboarding language switch) and the selected tab item.
   While tracking, the Recording dot and the progress bar's filled part are

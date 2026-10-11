@@ -1,6 +1,6 @@
 # Walkable Shanghai — neutral redesign and two-tab structure
 
-Date: 2026-10-11. Status: approved design, not yet implemented.
+Date: 2026-10-11. Status: implemented on `neutral-redesign`, 2026-10-12.
 
 This design replaces the "under the canopy" visual system (green-tinted grounds, soft-green cards, canopy wash) and restructures the app from four tabs to two. The canopy palette read as ugly in dark mode and as too pervasive: green on every surface looked toxic rather than natural.
 
@@ -159,5 +159,5 @@ Not included until a backend exists: sign in, log out, delete account, sync. "Se
 
 ## 7. Known limits
 
-- On the iOS 26.5 simulator the standard basemap is blank because Apple's China map endpoints (AutoNavi) time out from this network. Satellite and Traffic may be blank there too. Map styles are verified visually on the iOS 18.6 simulator; tests assert the selected style, not the scenery.
+- Whether the basemap draws depends on the network path to Apple's China map endpoints (AutoNavi). On 2026-10-12, over a VPN, all three styles drew scenery on the iOS 26.5 and iOS 18.6 simulators. Tests assert the selected style, not the scenery. Traffic colouring has not been seen in the simulator.
 - Walking-now counts read 0 and walk counts are bundled sample figures until a backend exists.
