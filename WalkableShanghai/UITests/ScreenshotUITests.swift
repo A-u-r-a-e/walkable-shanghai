@@ -5,15 +5,23 @@ import XCTest
 @MainActor
 final class ScreenshotUITests: XCTestCase {
 
+    func testCaptureOnboarding() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-settings.language", "english", "-settings.hasSeenOnboarding", "NO", "-uitest.resetUserState"]
+        app.launch()
+        XCTAssertTrue(anyElement(app, "onboarding-primary").waitForExistence(timeout: 10))
+        attachScreenshot(app, "00-onboarding")
+    }
+
     func testCaptureEveryScreen() {
         let app = launchWalkable()
         attachScreenshot(app, "01-map-list")
         anyElement(app, "sheet-handle").tap()
         attachScreenshot(app, "02-map-list-expanded")
-        chooseRoutesOption(app, "Popular")
-        attachScreenshot(app, "03-map-popular")
-        chooseRoutesOption(app, "Saved")
-        attachScreenshot(app, "04-map-saved")
+        captureList(app, "Popular", "03-map-popular")
+        captureList(app, "Featured", "03b-map-featured")
+        captureList(app, "Saved", "04-map-saved")
+        captureList(app, "Mine", "04b-map-mine")
         chooseRoutesOption(app, "Nearby")
         revealRow(app, "wukang").tap()
         // The list cross-fades into the card and the map flies to the route;
@@ -33,6 +41,14 @@ final class ScreenshotUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         anyElement(app, "me-downloads-row").tap()
         attachScreenshot(app, "09-downloads")
+    }
+
+    /// On iOS 18 a capture straight after choosing a list catches the menu
+    /// fading out and the map still moving to the new routes.
+    private func captureList(_ app: XCUIApplication, _ option: String, _ name: String) {
+        chooseRoutesOption(app, option)
+        sleep(2)
+        attachScreenshot(app, name)
     }
 
     func testCaptureTrackingSummaryAndBuilder() {
