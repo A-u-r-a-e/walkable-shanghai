@@ -94,7 +94,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
         // back through the profile's stored-walk count.
         let relaunched = launchApp(resetUserState: false)
         waitForMap(relaunched)
-        relaunched.tabBars.buttons["You"].tap()
+        relaunched.tabBars.buttons["Me"].tap()
         XCTAssertTrue(
             element(relaunched, "profile-walk-count").waitForExistence(timeout: 10),
             "the profile does not report stored walks"
@@ -119,7 +119,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
         app.buttons["post-to-feed-button"].tap()
         waitForMap(app)
 
-        app.tabBars.buttons["You"].tap()
+        app.tabBars.buttons["Me"].tap()
         XCTAssertTrue(element(app, "profile-walk-count").waitForExistence(timeout: 10))
         XCTAssertEqual(element(app, "profile-walk-count").value as? String, "1",
                        "Post to feed should store the walk too")
@@ -184,7 +184,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
         let app = launchApp()
         waitForMap(app)
 
-        app.tabBars.buttons["You"].tap()
+        app.tabBars.buttons["Me"].tap()
         element(app, "profile-draw-route-row").tap()
 
         drawFivePoints(app)
@@ -237,7 +237,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
     func testDrawnRouteSurvivesRelaunch() {
         let app = launchApp()
         waitForMap(app)
-        app.tabBars.buttons["You"].tap()
+        app.tabBars.buttons["Me"].tap()
         element(app, "profile-draw-route-row").tap()
         drawFivePoints(app)
         let name = element(app, "builder-name-field")
@@ -255,7 +255,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
     func testBuilderSaveIsOffUntilThereIsALine() {
         let app = launchApp()
         waitForMap(app)
-        app.tabBars.buttons["You"].tap()
+        app.tabBars.buttons["Me"].tap()
         element(app, "profile-draw-route-row").tap()
 
         let map = element(app, "builder-map")
@@ -278,7 +278,7 @@ final class SummaryAndBuilderUITests: XCTestCase {
     func testBuilderReadsInChinese() {
         let app = launchApp(language: "chinese")
         waitForMap(app)
-        app.tabBars.buttons["我的"].tap()
+        app.tabBars.buttons["我"].tap()
         element(app, "profile-draw-route-row").tap()
 
         XCTAssertTrue(element(app, "builder-map").waitForExistence(timeout: 10))
