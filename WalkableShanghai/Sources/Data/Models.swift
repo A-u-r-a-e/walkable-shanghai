@@ -38,6 +38,23 @@ struct Route: Codable, Identifiable, Hashable, Sendable {
     var isFeatured: Bool { tags.contains(.featured) }
 }
 
+extension Route {
+    /// Distance and time as the list rows and the route card show them,
+    /// "3.4 km · 52 min", so the two never drift apart.
+    func figures(_ language: AppLanguage) -> String {
+        "\(String(format: "%.1f", km)) \("unit.km".localized(language)) · \(minutes) \("unit.min".localized(language))"
+    }
+
+    /// The day the route last changed, as "Oct 3". Formatted in Shanghai time
+    /// because catalogue dates decode as midnight there; in the device's zone a
+    /// phone west of UTC+8 would show the day before.
+    func updatedDay(_ language: AppLanguage) -> String {
+        var style = Date.FormatStyle.dateTime.day().month(.abbreviated).locale(language.locale)
+        style.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        return updatedAt.formatted(style)
+    }
+}
+
 /// Seed identity for the signed-in walker.
 ///
 /// Deliberately holds no statistics. The source mockup hardcoded walks, total

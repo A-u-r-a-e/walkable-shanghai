@@ -712,47 +712,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A street thick with plane trees is not the same as a street you can walk for an hour. Every route here was walked end to end before it was published, and it tells you where it breaks."
+            "value": "A street thick with plane trees is not the same as a street you can walk for an hour. Every route here was walked end to end before it was published."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "绿树成荫的街道，不等于能走上一小时的街道。这里的每条路线都由人亲自走完后才发布，并会告诉你它在哪里断开。"
-          }
-        }
-      }
-    },
-    "onboarding.ends.detail": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Where the walk breaks off"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在何处被迫中断"
-          }
-        }
-      }
-    },
-    "onboarding.ends.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ends"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "断点"
+            "value": "绿树成荫的街道，不等于能走上一小时的街道。这里的每条路线都由人亲自走完后才发布。"
           }
         }
       }

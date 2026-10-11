@@ -359,14 +359,26 @@ struct AvatarInitial: View {
 /// checks it.
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(Typography.rowTitle)
-            .foregroundStyle(Theme.onPrimaryFill)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 50)
-            .background(Theme.primaryFill, in: Theme.shape(Theme.Radius.md))
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .contentShape(Rectangle())
+        StyledButton(configuration: configuration)
+    }
+
+    /// `isEnabled` reaches a view, not the style, so the drawing lives here.
+    /// Disabled drops the green: a green button that does nothing reads as
+    /// broken.
+    private struct StyledButton: View {
+        let configuration: Configuration
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .font(Typography.rowTitle)
+                .foregroundStyle(isEnabled ? Theme.onPrimaryFill : Theme.labelTertiary)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 50)
+                .background(isEnabled ? Theme.primaryFill : Theme.fill, in: Theme.shape(Theme.Radius.md))
+                .opacity(configuration.isPressed ? 0.82 : 1)
+                .contentShape(Rectangle())
+        }
     }
 }
 
@@ -377,14 +389,24 @@ struct PrimaryButtonStyle: ButtonStyle {
 /// the second action of a pair reads as the lesser one.
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(Typography.rowTitle)
-            .foregroundStyle(Theme.label)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 50)
-            .background(Theme.fill, in: Theme.shape(Theme.Radius.md))
-            .opacity(configuration.isPressed ? 0.75 : 1)
-            .contentShape(Rectangle())
+        StyledButton(configuration: configuration)
+    }
+
+    /// Reads `isEnabled` for the same reason as `PrimaryButtonStyle.StyledButton`.
+    private struct StyledButton: View {
+        let configuration: Configuration
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .font(Typography.rowTitle)
+                .foregroundStyle(isEnabled ? Theme.label : Theme.labelTertiary)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 50)
+                .background(Theme.fill, in: Theme.shape(Theme.Radius.md))
+                .opacity(configuration.isPressed ? 0.75 : 1)
+                .contentShape(Rectangle())
+        }
     }
 }
 

@@ -81,7 +81,7 @@ struct DesignSystemGalleryView: View {
                             RouteRow(
                                 routeId: route.id,
                                 name: route.name(language),
-                                detail: detail(for: route, language: language),
+                                detail: route.figures(language),
                                 status: status(for: route, language: language)
                             )
                             if index < rows.count - 1 {
@@ -116,14 +116,8 @@ struct DesignSystemGalleryView: View {
         }
     }
 
-    private func detail(for route: Route, language: AppLanguage) -> String {
-        let km = "unit.km".localized(language)
-        let min = "unit.min".localized(language)
-        return "\(String(format: "%.1f", route.km)) \(km) · \(route.minutes) \(min)"
-    }
-
     private func status(for route: Route, language: AppLanguage) -> String {
-        let date = route.updatedAt.formatted(.dateTime.day().month(.abbreviated).locale(language.locale))
+        let date = route.updatedDay(language)
         return "\("routes.updated".localized(language, date)) · \(L10n.string("routes.walkingNow", language, count: 0))"
     }
 

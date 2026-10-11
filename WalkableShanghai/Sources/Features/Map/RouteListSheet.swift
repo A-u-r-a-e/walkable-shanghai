@@ -113,7 +113,7 @@ struct RouteListSheet: View {
                 RouteRow(
                     routeId: route.id,
                     name: route.name(language),
-                    detail: figures(route, language: language),
+                    detail: route.figures(language),
                     status: status(route, language: language)
                 )
             }
@@ -131,12 +131,8 @@ struct RouteListSheet: View {
         }
     }
 
-    private func figures(_ route: Route, language: AppLanguage) -> String {
-        "\(String(format: "%.1f", route.km)) \("unit.km".localized(language)) · \(route.minutes) \("unit.min".localized(language))"
-    }
-
     private func status(_ route: Route, language: AppLanguage) -> String {
-        let date = route.updatedAt.formatted(.dateTime.day().month(.abbreviated).locale(language.locale))
+        let date = route.updatedDay(language)
         let walking = L10n.string("routes.walkingNow", language, count: store.activity.walkingNow(routeId: route.id))
         return "\("routes.updated".localized(language, date)) · \(walking)"
     }

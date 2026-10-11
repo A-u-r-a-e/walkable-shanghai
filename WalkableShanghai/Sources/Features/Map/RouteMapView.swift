@@ -70,7 +70,7 @@ struct RouteMapView: UIViewRepresentable {
 
         map.preferredConfiguration = Self.configuration(for: style)
         map.accessibilityIdentifier = "route-map"
-        map.accessibilityValue = style.rawValue
+        map.accessibilityValue = style.localizationKey.localized(settings.language)
 
         // The basemap follows the app's appearance explicitly rather than by
         // inheritance, so the casing and the tiles under it can never disagree
@@ -121,8 +121,9 @@ struct RouteMapView: UIViewRepresentable {
         if context.coordinator.lastStyle != style {
             context.coordinator.lastStyle = style
             map.preferredConfiguration = Self.configuration(for: style)
-            map.accessibilityValue = style.rawValue
         }
+        // Set on every update, so a language switch relabels it too.
+        map.accessibilityValue = style.localizationKey.localized(settings.language)
 
         // Redraw and re-frame only when the set of routes actually changes —
         // a filter change or the first load. Panning and sheet movement leave

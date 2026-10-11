@@ -68,12 +68,6 @@ struct OnboardingView: View {
                         )
                         separator
                         promise(
-                            symbol: "arrow.triangle.turn.up.right.diamond",
-                            title: "onboarding.ends.title".localized(language),
-                            detail: "onboarding.ends.detail".localized(language)
-                        )
-                        separator
-                        promise(
                             symbol: "person",
                             title: "onboarding.walker.title".localized(language),
                             detail: "onboarding.walker.detail".localized(language)
@@ -91,8 +85,10 @@ struct OnboardingView: View {
             VStack(spacing: Theme.Space.s2) {
                 Button("onboarding.primary".localized(language), action: onFindRoute)
                     .buttonStyle(.primaryClassical)
+                    .accessibilityIdentifier("onboarding-primary")
                 Button("onboarding.secondary".localized(language), action: onShareRoute)
                     .buttonStyle(.secondaryClassical)
+                    .accessibilityIdentifier("onboarding-secondary")
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.top, Theme.Space.s3)
@@ -102,7 +98,7 @@ struct OnboardingView: View {
         .screenBackground()
     }
 
-    /// One of the three things every route promises. Symbol tile, label title,
+    /// One of the things every route promises. Symbol tile, label title,
     /// muted explanation.
     private func promise(symbol: String, title: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: Theme.Space.s3) {

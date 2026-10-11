@@ -47,7 +47,7 @@ struct RouteCard: View {
                     .accessibilityLabel("action.close".localized(language))
             }
 
-            Text(figures(language))
+            Text(route.figures(language))
                 .font(Typography.secondary)
                 .foregroundStyle(Theme.labelSecondary)
                 .tabularFigures()
@@ -96,10 +96,6 @@ struct RouteCard: View {
         .padding(.bottom, Theme.Space.s4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("route-card")
-    }
-
-    private func figures(_ language: AppLanguage) -> String {
-        "\(String(format: "%.1f", route.km)) \("unit.km".localized(language)) · \(route.minutes) \("unit.min".localized(language))"
     }
 
     private func shareText(_ language: AppLanguage) -> String {

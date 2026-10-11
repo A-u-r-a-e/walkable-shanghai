@@ -29,6 +29,7 @@ final class LanguageSwitchUITests: XCTestCase {
         app.launchArguments = [
             "-settings.language", "english",
             "-settings.hasSeenOnboarding", "NO",
+            "-settings.mapStyle", "standard",
         ]
         app.launch()
         return app
@@ -80,6 +81,9 @@ final class LanguageSwitchUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["我"].exists)
         XCTAssertFalse(app.tabBars.buttons["社区"].exists)
         XCTAssertFalse(app.tabBars.buttons["收藏"].exists)
+        let map = app.descendants(matching: .any).matching(identifier: "route-map").firstMatch
+        XCTAssertTrue(map.waitForExistence(timeout: 10))
+        XCTAssertEqual(map.value as? String, "地图", "the map's style is not read out in Chinese")
         capture(app, "03-tabshell-zh")
 
         // 4 — Switch back from the language switch's permanent home.
@@ -110,6 +114,7 @@ final class LanguageSwitchUITests: XCTestCase {
             "the Routes sheet did not appear on the Map tab"
         )
         XCTAssertTrue(app.staticTexts["Routes"].exists, "the Routes sheet is not in English")
+        XCTAssertEqual(map.value as? String, "Map", "the map's style did not follow the language switch")
         XCTAssertTrue(
             app.buttons["route-row-wukang"].exists,
             "the bundled catalogue did not reach the map screen"

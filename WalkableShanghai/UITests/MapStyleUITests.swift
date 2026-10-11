@@ -27,15 +27,15 @@ final class MapStyleUITests: XCTestCase {
     func testEachStyleCanBeChosen() {
         let app = launchWalkable()
         let map = anyElement(app, "route-map")
-        XCTAssertEqual(map.value as? String, "standard")
+        XCTAssertEqual(map.value as? String, "Map")
         chooseStyle(app, "Satellite")
-        XCTAssertEqual(map.value as? String, "satellite")
+        XCTAssertEqual(map.value as? String, "Satellite")
         attachScreenshot(app, "map-style-satellite")
         chooseStyle(app, "Traffic")
-        XCTAssertEqual(map.value as? String, "traffic")
+        XCTAssertEqual(map.value as? String, "Traffic")
         attachScreenshot(app, "map-style-traffic")
         chooseStyle(app, "Map")
-        XCTAssertEqual(map.value as? String, "standard")
+        XCTAssertEqual(map.value as? String, "Map")
     }
 
     func testTheChoiceSurvivesRelaunch() {
@@ -43,14 +43,17 @@ final class MapStyleUITests: XCTestCase {
         chooseStyle(app, "Satellite")
         app.terminate()
         app = launchWalkable(resetState: false, mapStyle: nil)
-        XCTAssertEqual(anyElement(app, "route-map").value as? String, "satellite")
+        XCTAssertEqual(anyElement(app, "route-map").value as? String, "Satellite")
         chooseStyle(app, "Map")
     }
 
     func testTheMenuReadsInChinese() {
         let app = launchWalkable(language: "chinese")
+        XCTAssertEqual(anyElement(app, "route-map").value as? String, "地图")
         anyElement(app, "map-style-button").tap()
         XCTAssertTrue(app.buttons["卫星"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["路况"].exists)
+        app.buttons["卫星"].tap()
+        XCTAssertEqual(anyElement(app, "route-map").value as? String, "卫星")
     }
 }
