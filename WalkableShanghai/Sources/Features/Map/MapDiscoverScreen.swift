@@ -1,11 +1,10 @@
 import SwiftUI
 
-/// Screen 2 — map and discovery. The app's home.
+/// The map tab, and the app's home.
 ///
-/// Composed natively from the Classical tokens rather than ported from the
-/// mockup's layout. The functional brief is the mockup's: a full-bleed map with
-/// a pin per route, a filter across the top, a record button, and a
-/// two-height sheet listing the routes currently in view.
+/// A full-bleed map with a pin per listed route, a search field and the
+/// map-style button across the top, a record button, and a two-height sheet
+/// that lists routes the way the walker chose in its Routes dropdown.
 ///
 /// The sheet is built by hand rather than with `.presentationDetents`, for two
 /// reasons a system sheet cannot satisfy: the record button has to track the
@@ -16,8 +15,6 @@ struct MapDiscoverScreen: View {
     @Environment(AppSettings.self) private var settings
     @Environment(RouteStore.self) private var store
     @Environment(SavedRoutesStore.self) private var saved
-
-    enum Filter: Hashable { case featured, nearby, saved }
 
     private enum Detent {
         case peek, full
@@ -31,7 +28,9 @@ struct MapDiscoverScreen: View {
         }
     }
 
-    @State private var filter: Filter = .featured
+    @State private var query = RouteListQuery()
+    @State private var origin: Coordinate?
+    @State private var isShowingBuilder = false
     @State private var detent: Detent = .peek
     @State private var dragTranslation: CGFloat = 0
     @State private var selectedRouteId: String?
@@ -50,7 +49,7 @@ struct MapDiscoverScreen: View {
                     routes: listedRoutes,
                     style: settings.mapStyle,
                     bottomInset: Detent.peek.height(in: available),
-                    topInset: 132,
+                    topInset: 76,
                     onSelectRoute: { selectedRouteId = $0 }
                 )
                 .ignoresSafeArea(edges: .bottom)
@@ -65,10 +64,14 @@ struct MapDiscoverScreen: View {
 
                 recordButton(language: language, sheetHeight: sheetHeight)
 
-                sheet(language: language, height: sheetHeight, available: available)
+                sheet(height: sheetHeight, available: available)
             }
         }
         .screenBackground()
+        .onAppear { origin = NearbyOrigin.current() }
+        .fullScreenCover(isPresented: $isShowingBuilder) {
+            NavigationStack { RouteBuilderScreen() }
+        }
         .navigationDestination(item: $selectedRouteId) { routeId in
             RouteDetailScreen(routeId: routeId)
         }
@@ -79,53 +82,62 @@ struct MapDiscoverScreen: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    // MARK: - Filtering
+    // MARK: - Listing
 
-    /// What the map and the sheet both draw. One source, so they can never
-    /// disagree about what is in view.
+    private var sections: [RouteListSection] {
+        RouteList.sections(
+            routes: store.routes,
+            query: query,
+            mineIds: store.mineRouteIds,
+            savedIds: saved.savedRouteIds,
+            origin: origin,
+            activity: store.activity
+        )
+    }
+
+    /// What the map draws: every route listed, once, in list order.
     private var listedRoutes: [Route] {
-        switch filter {
-        case .featured, .nearby:
-            // Nearby returns everything for now — real distance sorting needs
-            // real location, which is Phase 4. Marked excluded in PLAN.md.
-            return store.routes
-        case .saved:
-            return store.routes.filter { saved.isSaved($0.id) }
-        }
+        var seen = Set<String>()
+        return sections.flatMap(\.routes).filter { seen.insert($0.id).inserted }
     }
 
     // MARK: - Top controls
 
     private func controls(language: AppLanguage) -> some View {
-        VStack(spacing: Theme.Space.s2) {
-            // Presented but inert, matching the mockup. Search behaviour is
-            // excluded from this phase, and a field that looks live but does
-            // nothing is worse than one that plainly waits its turn.
+        HStack(spacing: Theme.Space.s2) {
             HStack(spacing: Theme.Space.s2) {
                 Image(systemName: "magnifyingglass")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.labelSecondary)
-                Text("map.search".localized(language))
+                TextField("map.search".localized(language), text: $query.searchText)
                     .font(Typography.secondary)
-                    .foregroundStyle(Theme.labelSecondary)
-                Spacer(minLength: 0)
+                    .foregroundStyle(Theme.label)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier("map-search-field")
             }
             .padding(.horizontal, Theme.Space.s4)
             .frame(minHeight: 46)
             // Floats over the map, so it takes glass. See Materials.swift.
             .floatingSurface(in: Capsule())
-            .accessibilityIdentifier("map-search-field")
 
-            SegmentedRing(
-                options: [
-                    (Filter.featured, "map.filter.featured".localized(language)),
-                    (Filter.nearby, "map.filter.nearby".localized(language)),
-                    (Filter.saved, "map.filter.saved".localized(language)),
-                ],
-                selection: $filter,
-                identifiers: ["map-filter-featured", "map-filter-nearby", "map-filter-saved"]
-            )
-            .floatingSurface(in: Capsule())
+            Menu {
+                Picker(selection: Bindable(settings).mapStyle) {
+                    ForEach(MapStyleOption.allCases, id: \.self) { style in
+                        Label(style.localizationKey.localized(language), systemImage: style.systemImage).tag(style)
+                    }
+                } label: {
+                    EmptyView()
+                }
+            } label: {
+                Image(systemName: settings.mapStyle.systemImage)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.label)
+                    .frame(width: 46, height: 46)
+                    .floatingSurface(in: Circle(), interactive: true)
+            }
+            .accessibilityIdentifier("map-style-button")
+            .accessibilityLabel("map.style.button".localized(language))
         }
         .padding(.horizontal, Theme.Space.s3)
     }
@@ -165,55 +177,19 @@ struct MapDiscoverScreen: View {
 
     // MARK: - Sheet
 
-    private func sheet(language: AppLanguage, height: CGFloat, available: CGFloat) -> some View {
+    private func sheet(height: CGFloat, available: CGFloat) -> some View {
         VStack {
             Spacer(minLength: 0)
 
             VStack(spacing: 0) {
                 grabHandle(available: available)
 
-                HStack(alignment: .firstTextBaseline) {
-                    Text("map.routesInView".localized(language))
-                        .font(Typography.heading)
-                        .foregroundStyle(Theme.label)
-                    Spacer()
-                    Text("\(listedRoutes.count)")
-                        .font(Typography.figure(.subheadline))
-                        .foregroundStyle(Theme.accent)
-                        .accessibilityIdentifier("routes-in-view-count")
-                }
-                .padding(.horizontal, Theme.Space.s4)
-                .padding(.bottom, Theme.Space.s2)
-
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        if listedRoutes.isEmpty {
-                            EmptyStateNote(
-                                text: "map.empty".localized(language),
-                                identifier: "map-empty"
-                            )
-                            SeparatorRule()
-                        }
-                        ForEach(listedRoutes) { route in
-                            Button {
-                                selectedRouteId = route.id
-                            } label: {
-                                RouteRow(
-                                    name: route.name(language),
-                                    detail: detailLine(for: route, language: language)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("route-row-\(route.id)")
-                            SeparatorRule()
-                        }
-                    }
-                    .padding(.horizontal, Theme.Space.s4)
-                    // Clears the tab bar, which draws over the sheet rather
-                    // than inset from it. Without this the last route in the
-                    // list can sit under the bar with no way to scroll it out.
-                    .padding(.bottom, Theme.Space.s8 + 56)
-                }
+                RouteListSheet(
+                    query: $query,
+                    sections: sections,
+                    onSelect: { selectedRouteId = $0 },
+                    onNewRoute: { isShowingBuilder = true }
+                )
             }
             .frame(height: height)
             .frame(maxWidth: .infinity)
@@ -273,12 +249,6 @@ struct MapDiscoverScreen: View {
         let maximum = Detent.full.height(in: available)
         // Dragging up is a negative translation, which should grow the sheet.
         return min(maximum, max(minimum, base - dragTranslation))
-    }
-
-    private func detailLine(for route: Route, language: AppLanguage) -> String {
-        let km = "unit.km".localized(language)
-        let minutes = "unit.min".localized(language)
-        return "\(route.km) \(km) · \(route.minutes) \(minutes)"
     }
 }
 

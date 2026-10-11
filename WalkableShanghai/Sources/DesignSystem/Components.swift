@@ -197,14 +197,14 @@ struct EmptyStateNote: View {
 ///
 /// Replaces the old gold inset ring. This is the standard iOS segmented shape,
 /// tinted — which is the point of the redesign: a reader should recognise the
-/// control before they read it. Used by the map filters, the feed tabs and the
+/// control before they read it. Used by Popular's period selector and the
 /// language switch.
 struct SegmentedRing<Value: Hashable>: View {
     let options: [(value: Value, title: String)]
     @Binding var selection: Value
     /// Optional stable identifiers for tests. Without them a segment can only
     /// be found by its visible title, which collides when the same word appears
-    /// elsewhere on screen — "Saved" is both a map filter and a tab.
+    /// elsewhere on screen.
     var identifiers: [String] = []
 
     var body: some View {
@@ -387,15 +387,15 @@ struct CircularIconButton: View {
 
 // MARK: - Route row
 
-/// One route in a list: its name, and the facts that decide whether you want
-/// it.
+/// One route in a list: name, figures, and when it last changed and who is on it.
 struct RouteRow: View {
+    let routeId: String
     let name: String
     let detail: String
-    var showsChevron: Bool = true
+    let status: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: Theme.Space.s3) {
+        HStack(alignment: .center, spacing: Theme.Space.s3) {
             VStack(alignment: .leading, spacing: Theme.Space.s1) {
                 Text(name)
                     .font(Typography.rowTitle)
@@ -403,17 +403,18 @@ struct RouteRow: View {
                     .multilineTextAlignment(.leading)
                 Text(detail)
                     .font(Typography.meta)
-                    .foregroundStyle(Theme.labelTertiary)
+                    .foregroundStyle(Theme.labelSecondary)
                     .tabularFigures()
+                Text(status)
+                    .font(Typography.meta)
+                    .foregroundStyle(Theme.labelTertiary)
+                    .accessibilityIdentifier("route-row-status-\(routeId)")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if showsChevron {
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.labelTertiary)
-                    .padding(.top, 2)
-            }
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.labelTertiary)
         }
         .padding(.vertical, Theme.Space.s3)
         .contentShape(Rectangle())

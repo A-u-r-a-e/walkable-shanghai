@@ -79,8 +79,10 @@ struct DesignSystemGalleryView: View {
                         let rows = Array(store.routes.prefix(3))
                         ForEach(Array(rows.enumerated()), id: \.element.id) { index, route in
                             RouteRow(
+                                routeId: route.id,
                                 name: route.name(language),
-                                detail: detail(for: route, language: language)
+                                detail: detail(for: route, language: language),
+                                status: status(for: route, language: language)
                             )
                             if index < rows.count - 1 {
                                 SeparatorRule()
@@ -118,6 +120,11 @@ struct DesignSystemGalleryView: View {
         let km = "unit.km".localized(language)
         let min = "unit.min".localized(language)
         return "\(route.km) \(km) · \(route.minutes) \(min)"
+    }
+
+    private func status(for route: Route, language: AppLanguage) -> String {
+        let date = route.updatedAt.formatted(.dateTime.day().month(.abbreviated).locale(language.locale))
+        return "\("routes.updated".localized(language, date)) · \(L10n.string("routes.walkingNow", language, count: 0))"
     }
 
     private func section<Content: View>(
