@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Only the keys Xcode's INFOPLIST_KEY_* build settings cannot express.
+
+  GENERATE_INFOPLIST_FILE stays on, so everything else - the display name, the
+  scene manifest, the two location permission strings - is still generated from
+  build settings and merged into this file at build time.
+
+  UIBackgroundModes has to live here because there is no supported
+  INFOPLIST_KEY_ for it. Setting one is accepted silently and produces no key,
+  which is how this was missed: CLLocationManager then throws on
+  `allowsBackgroundLocationUpdates = true` and the app dies at launch.
+
+  The rest is how routes are shared without a server (see RouteShare.swift):
+  the `jwalk` URL scheme for links, and the `.jwalk` file type, which JWalk
+  declares and opens.
+-->
+<plist version="1.0">
+<dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.jwalk.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>jwalk</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.jwalk.route</string>
+			<key>UTTypeDescription</key>
+			<string>JWalk route</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>jwalk</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>JWalk route</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.jwalk.route</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
+</dict>
+</plist>
