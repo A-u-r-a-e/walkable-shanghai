@@ -1,8 +1,11 @@
 # JWalk — iOS app
 
-Native SwiftUI app. See `../PLAN.md` for the original development plan and
-`../docs/superpowers/specs/2026-10-11-ecosia-redesign-design.md` for the current
-design; this file covers how to build, test and change what exists.
+Native SwiftUI app. This file is the reference for building, testing and
+changing what exists. New to the project? Start with `../README.md`, then
+`../docs/ARCHITECTURE.md` (how the code works), `../docs/DEVELOPMENT.md`
+(setup, conventions, recipes), `../docs/STATUS.md` (known bugs, roadmap) and
+`../docs/DECISIONS.md` (why things are the way they are). `DESIGN.md` is the
+design system.
 
 **The app has two tabs, Map and Me, on a neutral design system.** The Map tab
 holds the route map, search, three map styles and the Routes sheet with its five
@@ -18,10 +21,9 @@ the walker has actually done — no screen carries a hardcoded figure.
 
 ## Build and run
 
-There is no `xcodegen` or `tuist` on this machine, and the system's
-`xcode-select` points at the Command Line Tools rather than at Xcode. So every
-command below sets `DEVELOPER_DIR` explicitly rather than changing a machine-wide
-setting:
+The commands below set `DEVELOPER_DIR` explicitly, which is needed when
+`xcode-select` points at the Command Line Tools rather than at Xcode (check with
+`xcode-select -p`). If it already points at Xcode, leave the `export` out:
 
 ```sh
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -30,7 +32,7 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 xcodebuild -project JWalk.xcodeproj -scheme JWalk \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 
-# Test (95 unit + 63 UI). The UI half drives the simulator, so budget ~15 min.
+# Test (95 unit + 64 UI). The UI half drives the simulator, so budget ~15 min.
 xcodebuild -project JWalk.xcodeproj -scheme JWalk \
   -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
@@ -45,8 +47,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ## How the Xcode project is generated
 
 `JWalk.xcodeproj` is produced by `Scripts/generate_project.py`. That
-was the simplest reliable option here: neither xcodegen nor tuist was installed,
-and a two-target project did not justify adding a global tool dependency.
+was the simplest reliable option: neither xcodegen nor tuist was installed on
+the machine the project started on, and a project with one app and two test
+targets did not justify adding a global tool dependency.
 
 The generated project uses Xcode 16+ **file system synchronized groups**, which
 matters day to day: the project file does not list source files. It points at
@@ -279,8 +282,8 @@ The map-style button offers three styles, persisted in `settings.mapStyle`:
 - **Traffic**: the standard configuration with `showsTraffic` on.
 
 Because the camera sits on Shanghai, Apple Maps serves the basemap from its
-**China** endpoints, which are backed by **AutoNavi (Amap)**. Earlier runs from
-this machine timed out against them:
+**China** endpoints, which are backed by **AutoNavi (Amap)**. Early runs on the
+development machine timed out against them:
 
 ```
 https://gspe19-2-cn-ssl.ls.apple.com/poi_update?...   → timed out (-1001)
@@ -289,7 +292,7 @@ https://dispatcher.is.autonavi.com/dispatcher          → timed out (-1001)
 
 and for a while the iOS 26.5 simulator drew the routes over an empty grid while
 iOS 18.6 drew full scenery. **That is no longer what happens.** On 2026-10-12,
-from this machine's network, which runs through a VPN, all three styles drew
+from a network that runs through a VPN, all three styles drew
 scenery on both iOS 26.5 and iOS 18.6. The iOS 26.5 basemap carried AutoNavi's
 attribution (高德地图); the iOS 18.6 basemap carried Apple Maps' attribution.
 Whether the scenery draws depends on the network path to those endpoints, so
@@ -313,12 +316,12 @@ Three things follow:
 ## Running on both iOS versions
 
 The deployment target is iOS 18.0, and the suite is green on **iOS 18.6**
-(iPhone 16 Pro) as well as **iOS 26.5** (iPhone 17 Pro): 95 unit and 63 UI
+(iPhone 16 Pro) as well as **iOS 26.5** (iPhone 17 Pro): 95 unit and 64 UI
 tests on each, with no failures, on 2026-10-22.
 
-`name=iPhone 16 Pro` does not resolve on this machine (`xcodebuild` exits 70,
-"Unable to find a device matching"), so point at the iOS 18.6 simulator by its
-id. List ids with `xcrun simctl list devices`:
+On the development machine, `name=iPhone 16 Pro` did not resolve (`xcodebuild`
+exits 70, "Unable to find a device matching"). If that happens, point at the
+iOS 18 simulator by its id. List ids with `xcrun simctl list devices`:
 
 ```sh
 xcodebuild -project JWalk.xcodeproj -scheme JWalk \
